@@ -50,10 +50,6 @@
   .btn-danger{background:none;border:none;color:#B43C3C;cursor:pointer;font-size:.85rem}
   .btn-sm{padding:6px 12px;font-size:.72rem}
 
-  .tipo-selector{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
-  .tipo-opt{flex:1;min-width:140px;border:1.5px solid var(--creme-dark);border-radius:9px;padding:12px 14px;cursor:pointer;text-align:center;font-size:.8rem;font-weight:500;color:var(--text-light);transition:.15s}
-  .tipo-opt.active{border-color:var(--bordo);color:var(--bordo-dark);background:var(--creme);font-weight:600}
-
   table{width:100%;border-collapse:collapse;font-size:.82rem}
   th{text-align:left;padding:9px 10px;background:var(--creme);color:var(--text-light);font-size:.68rem;text-transform:uppercase;letter-spacing:.05em}
   td{padding:9px 10px;border-top:1px solid var(--creme-dark);vertical-align:top}
@@ -106,33 +102,10 @@
 <nav class="tabs">
   <div class="tab active" id="tabNova" data-tab="nova" onclick="mudarTab('nova')">➕ Nova Perda</div>
   <div class="tab" id="tabHistorico" data-tab="historico" onclick="mudarTab('historico')">📋 Histórico</div>
-  <div class="tab" id="tabBackoffice" style="display:none" data-tab="backoffice" onclick="mudarTab('backoffice')">📦 Produtos</div>
   <div class="tab" id="tabRelatorio" style="display:none" data-tab="relatorio" onclick="mudarTab('relatorio')">📊 Relatório Mensal</div>
 </nav>
 
 <main id="mainContent"><div class="loading">Carregando…</div></main>
-</div>
-
-<!-- MODAL: Novo/editar produto (backoffice) -->
-<div class="modal-overlay" id="modalProduto">
-  <div class="modal">
-    <h3 id="tituloProduto">Novo Produto</h3>
-    <div class="field" style="margin-bottom:10px"><label>Nome</label><input class="inp" id="pdNome"></div>
-    <div class="row" style="margin-bottom:0">
-      <div class="field" style="flex:1">
-        <label>Categoria</label>
-        <select class="inp" id="pdCategoria">
-          <option value="Revenda">Revenda</option>
-          <option value="Variegatos">Variegatos</option>
-        </select>
-      </div>
-      <div class="field" style="flex:1"><label>Unidade</label><input class="inp" id="pdUnidade" placeholder="un, kg, L..."></div>
-      <div class="field" style="flex:1"><label>Custo Unitário (R$)</label><input class="inp" id="pdCusto" type="number" step="0.01" min="0"></div>
-    </div>
-    <div class="msg" id="produtoMsg"></div>
-    <div class="modal-actions"><button class="btn" onclick="salvarProduto()" id="btnSalvarProduto">Salvar</button></div>
-    <button class="modal-close" onclick="fecharModal('modalProduto')">Cancelar</button>
-  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -145,7 +118,7 @@ const PORTAL_URL = 'https://thiagodlborges.github.io/Sistema-Luna/';
 const $ = id => document.getElementById(id);
 
 const TODAS_LOJAS = ['Esplanada','Cianê','Tucuruvi','Indaiatuba','Jundiaí','Praça da Moça - Diadema','Buriti Mogi Guaçu','SP Market','Iguatemi Campinas','Shopping Itaquera','Atrium'];
-const MOTIVOS = ['Quebra','Vencimento','Extravio','Furto','Outro'];
+const MOTIVOS = ['Vencimento','Cristalização','Impróprio para Consumo','Extravio','Desperdício','Furto','Outro'];
 
 let meuPerfil = null;
 let minhasLojas = [];
@@ -153,9 +126,7 @@ let lojaAtual = null;
 let currentTab = 'nova';
 let souBackoffice = false;
 let temPapelDeLoja = false;
-let tipoPerdaAtual = 'gelato';
-let saboresCache = [];
-let produtosDisponiveisCache = [];
+let produtosPrecificacaoCache = null;
 
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function fmtData(d){ return d ? new Date(d+'T12:00').toLocaleDateString('pt-BR') : '—'; }
@@ -191,14 +162,14 @@ async function verificarAcessoEIniciar(){
     // Backoffice puro (tipo externo, sem loja) — esconde as telas de loja
     ['tabNova','tabHistorico'].forEach(id => { const el = $(id); if (el) el.remove(); });
     $('seletorLojaWrap').style.display = 'none';
-    currentTab = souBackoffice ? 'backoffice' : 'nova';
+    currentTab = souBackoffice ? 'relatorio' : 'nova';
   } else {
     const sel = $('seletorLoja');
     sel.innerHTML = minhasLojas.map(l => '<option value="'+esc(l)+'">'+esc(l)+'</option>').join('');
     lojaAtual = minhasLojas[0];
   }
 
-  if (souBackoffice) { $('tabBackoffice').style.display = ''; $('tabRelatorio').style.display = ''; }
+  if (souBackoffice) { $('tabRelatorio').style.display = ''; }
 
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab===currentTab));
   document.getElementById('appRoot').style.display = 'block';
@@ -217,7 +188,6 @@ function mudarTab(tab){
 function renderTab(){
   if(currentTab==='nova') renderNovaPerda();
   else if(currentTab==='historico') renderHistorico();
-  else if(currentTab==='backoffice') renderBackoffice();
   else if(currentTab==='relatorio') renderRelatorio();
 }
 
@@ -228,11 +198,6 @@ async function renderNovaPerda(){
   el.innerHTML =
     '<div class="card">'+
       '<h2>Nova Perda — '+esc(lojaAtual)+'</h2>'+
-      '<div class="tipo-selector">'+
-        '<div class="tipo-opt" id="tipoOptGelato" onclick="trocarTipoPerda(\'gelato\')">🍨 Gelato</div>'+
-        '<div class="tipo-opt" id="tipoOptRevenda" onclick="trocarTipoPerda(\'revenda\')">🛒 Revenda</div>'+
-        '<div class="tipo-opt" id="tipoOptVariegato" onclick="trocarTipoPerda(\'variegato\')">🍫 Variegato</div>'+
-      '</div>'+
       '<div id="itemFieldsWrap" class="row"><div class="loading">Carregando…</div></div>'+
       '<div class="row">'+
         '<div class="field"><label>Data da perda</label><input class="inp" type="date" id="perdaData" value="'+hoje+'" max="'+hoje+'"></div>'+
@@ -244,44 +209,47 @@ async function renderNovaPerda(){
       '<div class="msg" id="novaPerdaMsg"></div>'+
       '<button class="btn" id="btnRegistrarPerda" onclick="registrarPerda()">Registrar Perda</button>'+
     '</div>';
-  await trocarTipoPerda('gelato');
+  await carregarSeletorProduto();
 }
 
-async function trocarTipoPerda(tipo){
-  tipoPerdaAtual = tipo;
-  document.querySelectorAll('.tipo-opt').forEach(o => o.classList.remove('active'));
-  const map = { gelato:'tipoOptGelato', revenda:'tipoOptRevenda', variegato:'tipoOptVariegato' };
-  const optEl = $(map[tipo]);
-  if(optEl) optEl.classList.add('active');
+async function carregarProdutosPrecificacao(){
+  if(produtosPrecificacaoCache) return produtosPrecificacaoCache;
+  const { data, error } = await sb.rpc('get_precificacao_produtos_ativos');
+  if(error) throw error;
+  produtosPrecificacaoCache = data || [];
+  return produtosPrecificacaoCache;
+}
 
+async function carregarSeletorProduto(){
   const wrap = $('itemFieldsWrap');
   if(!wrap) return;
   wrap.innerHTML = '<div class="loading">Carregando…</div>';
   showMsg('novaPerdaMsg','','');
 
-  if(tipo === 'gelato'){
-    if(!saboresCache.length){
-      const { data, error } = await sb.from('catalogo_gelatos').select('nome').eq('ativo', true).order('ordem');
-      if(error){ wrap.innerHTML = '<div class="empty">Erro ao carregar sabores: '+esc(error.message)+'</div>'; return; }
-      saboresCache = data || [];
-    }
-    wrap.innerHTML =
-      '<div class="field" style="flex:2"><label>Sabor</label><select class="inp" id="perdaSabor">'+
-        (saboresCache.length ? saboresCache.map(s=>'<option value="'+esc(s.nome)+'">'+esc(s.nome)+'</option>').join('') : '<option value="">Nenhum sabor cadastrado</option>')+
-      '</select></div>'+
-      '<div class="field"><label>Quantidade (kg)</label><input class="inp" type="number" step="0.01" min="0.01" id="perdaQtd"></div>';
-  } else {
-    const categoria = tipo === 'revenda' ? 'Revenda' : 'Variegatos';
-    const { data, error } = await sb.from('vw_perdas_produtos_disponiveis').select('*').eq('categoria', categoria).order('nome');
-    if(error){ wrap.innerHTML = '<div class="empty">Erro ao carregar produtos: '+esc(error.message)+'</div>'; return; }
-    produtosDisponiveisCache = data || [];
-    wrap.innerHTML =
-      '<div class="field" style="flex:2"><label>Produto</label><select class="inp" id="perdaProduto" onchange="atualizarUnidadeLabel()">'+
-        (produtosDisponiveisCache.length ? produtosDisponiveisCache.map(p=>'<option value="'+p.produto_id+'" data-unidade="'+esc(p.unidade)+'">'+esc(p.nome)+'</option>').join('') : '<option value="">Nenhum produto cadastrado — peça ao backoffice pra cadastrar</option>')+
-      '</select></div>'+
-      '<div class="field"><label id="perdaQtdLabel">Quantidade</label><input class="inp" type="number" step="0.01" min="0.01" id="perdaQtd"></div>';
-    atualizarUnidadeLabel();
+  let produtos;
+  try { produtos = await carregarProdutosPrecificacao(); }
+  catch(error){ wrap.innerHTML = '<div class="empty">Erro ao carregar produtos: '+esc(error.message)+'</div>'; return; }
+
+  if(!produtos.length){
+    wrap.innerHTML = '<div class="empty">Nenhum produto ativo cadastrado na Precificação.</div>';
+    return;
   }
+
+  const porCategoria = {};
+  produtos.forEach(p => { (porCategoria[p.categoria] = porCategoria[p.categoria] || []).push(p); });
+
+  const optgroups = Object.keys(porCategoria).sort().map(cat =>
+    '<optgroup label="'+esc(cat)+'">'+
+      porCategoria[cat].map(p => '<option value="'+p.id+'" data-origem="'+esc(p.origem)+'">'+esc(p.nome)+'</option>').join('')+
+    '</optgroup>'
+  ).join('');
+
+  wrap.innerHTML =
+    '<div class="field" style="flex:2"><label>Produto</label><select class="inp" id="perdaProduto" onchange="atualizarUnidadeLabel()">'+
+      optgroups+
+    '</select></div>'+
+    '<div class="field"><label id="perdaQtdLabel">Quantidade</label><input class="inp" type="number" step="0.01" min="0.01" id="perdaQtd"></div>';
+  atualizarUnidadeLabel();
 }
 
 function atualizarUnidadeLabel(){
@@ -289,8 +257,11 @@ function atualizarUnidadeLabel(){
   const lbl = $('perdaQtdLabel');
   if(!sel || !lbl) return;
   const opt = sel.options[sel.selectedIndex];
-  const unidade = opt ? opt.dataset.unidade : '';
-  lbl.textContent = 'Quantidade' + (unidade ? ' ('+unidade+')' : '');
+  // Mesma regra do trigger fn_perdas_calcular_custo: kg só pros sabores vendidos por peso
+  // (origem fabrica_insumo). Todo o resto — inclusive Copinho/Casquinha/Cestinha, que também
+  // são categoria Gelato — é por unidade.
+  const unidade = (opt && opt.dataset.origem === 'fabrica_insumo') ? 'kg' : 'un';
+  lbl.textContent = 'Quantidade (' + unidade + ')';
 }
 
 async function registrarPerda(){
@@ -298,13 +269,17 @@ async function registrarPerda(){
   const motivo = $('perdaMotivo').value;
   const observacao = $('perdaObs').value.trim() || null;
   const quantidade = Number($('perdaQtd').value);
+  const produtoSel = $('perdaProduto');
 
   if(!data_perda){ showMsg('novaPerdaMsg','Informe a data da perda.','err'); return; }
+  if(!produtoSel || !produtoSel.value){ showMsg('novaPerdaMsg','Selecione um produto.','err'); return; }
   if(!quantidade || quantidade <= 0){ showMsg('novaPerdaMsg','Informe uma quantidade válida.','err'); return; }
 
+  // item_nome, tipo_perda, unidade e custo_unitario_aplicado são preenchidos
+  // automaticamente pelo trigger fn_perdas_calcular_custo a partir da Precificação.
   const payload = {
     loja: lojaAtual,
-    tipo_perda: tipoPerdaAtual,
+    precificacao_produto_id: produtoSel.value,
     quantidade,
     motivo,
     observacao,
@@ -312,18 +287,6 @@ async function registrarPerda(){
     registrado_por: meuPerfil.id,
     registrado_por_nome: meuPerfil.nome,
   };
-
-  if(tipoPerdaAtual === 'gelato'){
-    const sabor = $('perdaSabor').value;
-    if(!sabor){ showMsg('novaPerdaMsg','Selecione um sabor.','err'); return; }
-    payload.produto_id = null;
-    payload.item_nome = sabor;
-  } else {
-    const produtoSel = $('perdaProduto');
-    if(!produtoSel.value){ showMsg('novaPerdaMsg','Selecione um produto.','err'); return; }
-    payload.produto_id = Number(produtoSel.value);
-    payload.item_nome = produtoSel.options[produtoSel.selectedIndex].textContent;
-  }
 
   const btn = $('btnRegistrarPerda');
   btn.disabled = true; btn.textContent = 'Salvando…';
@@ -387,103 +350,6 @@ async function carregarHistorico(){
       )).join('')+
     '</tbody></table>'+
     '<p style="font-size:.72rem;color:var(--text-light);margin-top:10px">Lançamentos não podem ser editados ou excluídos por aqui. Em caso de erro, fale com o master.</p>';
-}
-
-// ── BACKOFFICE DE PRODUTOS (master/backoffice) ────────────
-let categoriaIdMap = {};
-let produtoEditandoId = null;
-
-async function renderBackoffice(){
-  const el = $('mainContent');
-  el.innerHTML =
-    '<div class="card">'+
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'+
-        '<h2 style="margin:0">Produtos — Revenda e Variegatos</h2>'+
-        '<button class="btn" onclick="abrirNovoProduto()">+ Novo Produto</button>'+
-      '</div>'+
-      '<p class="hint">Custo unitário usado pra calcular o valor das perdas de Revenda/Variegatos. A loja não enxerga essa coluna.</p>'+
-      '<div id="backofficeTabela" class="loading">Carregando…</div>'+
-    '</div>';
-  await carregarBackoffice();
-}
-
-async function carregarBackoffice(){
-  const [catR, prodR] = await Promise.all([
-    sb.from('categorias').select('id,nome').in('nome',['Revenda','Variegatos']),
-    sb.from('produtos').select('id,nome,unidade,ativo,custo_unitario,categoria_id,categorias!inner(nome)').in('categorias.nome',['Revenda','Variegatos']).order('nome'),
-  ]);
-  if(catR.error){ $('backofficeTabela').innerHTML = '<div class="empty">Erro: '+esc(catR.error.message)+'</div>'; return; }
-  categoriaIdMap = {};
-  (catR.data||[]).forEach(c => categoriaIdMap[c.nome] = c.id);
-
-  if(prodR.error){ $('backofficeTabela').innerHTML = '<div class="empty">Erro: '+esc(prodR.error.message)+'</div>'; return; }
-  const lista = prodR.data || [];
-  window.__produtosBackofficeCache = lista;
-  $('backofficeTabela').innerHTML = lista.length ?
-    '<table><thead><tr><th>Nome</th><th>Categoria</th><th>Unidade</th><th>Custo Unitário</th><th>Status</th><th></th></tr></thead><tbody>'+
-      lista.map(p => (
-        '<tr class="'+(p.ativo?'':'inativo')+'">'+
-          '<td>'+esc(p.nome)+'</td>'+
-          '<td>'+esc(p.categorias.nome)+'</td>'+
-          '<td>'+esc(p.unidade)+'</td>'+
-          '<td>'+fmtMoeda(p.custo_unitario)+'</td>'+
-          '<td>'+(p.ativo?'<span class="badge badge-ativo">Ativo</span>':'<span class="badge badge-inativo">Inativo</span>')+'</td>'+
-          '<td style="white-space:nowrap">'+
-            '<button class="btn-outline btn btn-sm" onclick="abrirEditarProduto('+p.id+')">Editar</button> '+
-            '<button class="btn-danger" onclick="toggleAtivoProduto('+p.id+','+(!p.ativo)+')">'+(p.ativo?'Desativar':'Reativar')+'</button>'+
-          '</td>'+
-        '</tr>'
-      )).join('')+'</tbody></table>'
-    : '<div class="empty">Nenhum produto de Revenda/Variegatos cadastrado ainda.</div>';
-}
-
-function abrirNovoProduto(){
-  produtoEditandoId = null;
-  $('tituloProduto').textContent = 'Novo Produto';
-  $('pdNome').value=''; $('pdCategoria').value='Revenda'; $('pdUnidade').value='un'; $('pdCusto').value='';
-  showMsg('produtoMsg','','');
-  $('modalProduto').classList.add('show');
-}
-
-function abrirEditarProduto(id){
-  const p = (window.__produtosBackofficeCache||[]).find(x => x.id === id);
-  if(!p) return;
-  produtoEditandoId = id;
-  $('tituloProduto').textContent = 'Editar Produto';
-  $('pdNome').value = p.nome; $('pdCategoria').value = p.categorias.nome;
-  $('pdUnidade').value = p.unidade; $('pdCusto').value = p.custo_unitario;
-  showMsg('produtoMsg','','');
-  $('modalProduto').classList.add('show');
-}
-
-async function salvarProduto(){
-  const nome = $('pdNome').value.trim();
-  const categoriaNome = $('pdCategoria').value;
-  const unidade = $('pdUnidade').value.trim() || 'un';
-  const custo_unitario = Number($('pdCusto').value) || 0;
-  if(!nome){ showMsg('produtoMsg','Informe o nome do produto.','err'); return; }
-  const categoria_id = categoriaIdMap[categoriaNome];
-  if(!categoria_id){ showMsg('produtoMsg','Categoria inválida.','err'); return; }
-
-  const payload = { nome, unidade, custo_unitario, categoria_id, tipo: 'produto' };
-  const btn = $('btnSalvarProduto');
-  btn.disabled = true; btn.textContent = 'Salvando…';
-  let error;
-  if(produtoEditandoId){
-    ({ error } = await sb.from('produtos').update(payload).eq('id', produtoEditandoId));
-  } else {
-    ({ error } = await sb.from('produtos').insert({ ...payload, ativo: true }));
-  }
-  btn.disabled = false; btn.textContent = 'Salvar';
-  if(error){ showMsg('produtoMsg','Erro: '+error.message,'err'); return; }
-  fecharModal('modalProduto');
-  renderBackoffice();
-}
-
-async function toggleAtivoProduto(id, novoValor){
-  const { error } = await sb.from('produtos').update({ ativo: novoValor }).eq('id', id);
-  if(error){ alert('Erro: '+error.message); return; }
-  renderBackoffice();
 }
 
 // ── RELATÓRIO MENSAL (master/backoffice) ──────────────────
