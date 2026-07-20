@@ -420,6 +420,16 @@ async function carregarRelatorio(){
     porTipo[r.tipo_perda] = (porTipo[r.tipo_perda]||0) + Number(r.valor_total);
   });
 
+  // Agrega por motivo (não vem na view de resumo, calculado a partir do detalhe)
+  const porMotivo = {};
+  detalhe.forEach(p => {
+    if(!porMotivo[p.motivo]) porMotivo[p.motivo] = { qtd:0, valor:0 };
+    porMotivo[p.motivo].qtd += 1;
+    porMotivo[p.motivo].valor += Number(p.valor_total);
+  });
+  const motivosOrdenados = Object.keys(porMotivo).sort((a,b) => porMotivo[b].valor - porMotivo[a].valor);
+  const totalMotivo = motivosOrdenados.reduce((a,m)=>a+porMotivo[m].valor,0);
+
   const tabelaLoja = lojas.length ?
     '<div class="table-wrap"><table><thead><tr><th>Loja</th><th>Lançamentos</th><th>Valor Total</th></tr></thead><tbody>'+
       lojas.map(l => '<tr><td>'+esc(l)+'</td><td>'+porLoja[l].qtd+'</td><td>'+fmtMoeda(porLoja[l].valor)+'</td></tr>').join('')+
@@ -432,11 +442,18 @@ async function carregarRelatorio(){
       Object.keys(porTipo).map(t => '<tr><td>'+labelTipo(t)+'</td><td>'+fmtMoeda(porTipo[t])+'</td></tr>').join('')+
     '</tbody></table></div>' : '';
 
+  const tabelaMotivo = motivosOrdenados.length ?
+    '<div class="table-wrap"><table><thead><tr><th>Motivo</th><th>Lançamentos</th><th>Valor Total</th><th>% do Total</th></tr></thead><tbody>'+
+      motivosOrdenados.map(m => '<tr><td>'+esc(m)+'</td><td>'+porMotivo[m].qtd+'</td><td>'+fmtMoeda(porMotivo[m].valor)+'</td><td>'+(totalMotivo ? (porMotivo[m].valor/totalMotivo*100).toFixed(1) : '0.0')+'%</td></tr>').join('')+
+    '</tbody></table></div>' : '<div class="empty">Nenhuma perda registrada neste mês.</div>';
+
   $('relatorioConteudo').innerHTML =
     '<h3 style="font-family:\'Cormorant Garamond\',serif;font-size:1.05rem;color:var(--bordo-dark);margin-bottom:8px">Resumo por loja</h3>'+
     tabelaLoja+
     '<h3 style="font-family:\'Cormorant Garamond\',serif;font-size:1.05rem;color:var(--bordo-dark);margin:22px 0 8px">Resumo por tipo de perda</h3>'+
-    tabelaTipo;
+    tabelaTipo+
+    '<h3 style="font-family:\'Cormorant Garamond\',serif;font-size:1.05rem;color:var(--bordo-dark);margin:22px 0 8px">Resumo por motivo</h3>'+
+    tabelaMotivo;
 }
 
 function exportarRelatorioExcel(){
@@ -463,8 +480,22 @@ function exportarRelatorioExcel(){
     Observação: p.observacao||'', 'Valor (R$)': Number(p.valor_total),
   }));
 
+  const porMotivo = {};
+  detalhe.forEach(p => {
+    if(!porMotivo[p.motivo]) porMotivo[p.motivo] = { qtd:0, valor:0 };
+    porMotivo[p.motivo].qtd += 1;
+    porMotivo[p.motivo].valor += Number(p.valor_total);
+  });
+  const linhasMotivo = Object.keys(porMotivo).sort((a,b)=>porMotivo[b].valor-porMotivo[a].valor).map(m => ({
+    Motivo: m, Lançamentos: porMotivo[m].qtd, 'Valor Total (R$)': porMotivo[m].valor,
+  }));
+  const totalMotivo = Object.values(porMotivo).reduce((a,l)=>a+l.valor,0);
+  const qtdMotivo = Object.values(porMotivo).reduce((a,l)=>a+l.qtd,0);
+  linhasMotivo.push({ Motivo: 'TOTAL GERAL', Lançamentos: qtdMotivo, 'Valor Total (R$)': totalMotivo });
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(linhasResumo), 'Resumo por Loja');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(linhasMotivo), 'Resumo por Motivo');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(linhasDetalhe), 'Lançamentos Detalhados');
   XLSX.writeFile(wb, 'perdas-'+mes+'.xlsx');
 }
