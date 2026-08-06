@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Luna — Controle de Uniformes</title>
+<title>Luna — Controle de Perdas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -18,7 +18,7 @@
   body{font-family:'Jost',sans-serif;background:var(--creme);color:var(--text);min-height:100vh}
   a{color:inherit}
 
-  #carregandoOverlay{position:fixed;inset:0;z-index:99999;background:linear-gradient(145deg,#4A1220 0%,#2C0A14 60%,#1A0008 100%);display:flex;align-items:center;justify-content:center;color:#C4A882;font-size:.85rem;letter-spacing:.1em;text-transform:uppercase}
+  #carregandoOverlay{position:fixed;inset:0;z-index:99999;background:linear-gradient(145deg,#4A1220 0%,#2C0A14 60%,#1A0008 100%);display:flex;align-items:center;justify-content:center;color:#C4A882;font-size:.85rem;letter-spacing:.1em;text-transform:uppercase;text-align:center;padding:20px}
 
   #appRoot{display:none}
   header{background:var(--bordo);color:var(--creme);padding:14px 26px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;box-shadow:0 2px 14px rgba(74,18,32,.25)}
@@ -34,9 +34,10 @@
   .tab{padding:14px 18px;font-size:.82rem;font-weight:500;color:var(--text-light);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
   .tab.active{color:var(--bordo);border-bottom-color:var(--bordo);font-weight:600}
 
-  main{max-width:1100px;margin:0 auto;padding:28px 26px 60px}
+  main{max-width:1140px;margin:0 auto;padding:28px 26px 60px}
   .card{background:var(--white);border:1px solid var(--creme-dark);border-radius:12px;padding:22px;margin-bottom:18px}
   .card h2{font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--bordo-dark);margin-bottom:14px}
+  .card p.hint{font-size:.82rem;color:var(--text-light);margin-bottom:14px}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
   .field{display:flex;flex-direction:column;gap:4px}
   .field label{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);font-weight:500}
@@ -51,21 +52,23 @@
   .btn-sm{padding:6px 12px;font-size:.72rem}
 
   .table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
-  table{width:100%;min-width:540px;border-collapse:collapse;font-size:.82rem}
+  table{width:100%;min-width:560px;border-collapse:collapse;font-size:.82rem}
   th{text-align:left;padding:9px 10px;background:var(--creme);color:var(--text-light);font-size:.68rem;text-transform:uppercase;letter-spacing:.05em}
-  td{padding:9px 10px;border-top:1px solid var(--creme-dark)}
+  td{padding:9px 10px;border-top:1px solid var(--creme-dark);vertical-align:top}
   tr.inativo td{color:var(--text-light);opacity:.6}
-  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.68rem;font-weight:600}
+  tr.total-row td{font-weight:600;border-top:2px solid var(--creme-dark)}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.68rem;font-weight:600;white-space:nowrap}
   .badge-ativo{background:#E8F8F0;color:#27AE60}
   .badge-inativo{background:#FDEDEC;color:#B43C3C}
-  .badge-pend{background:#FEF3E2;color:#E67E22}
+  .badge-tipo{background:var(--creme);color:var(--marrom-dark)}
 
   .empty{text-align:center;padding:40px;color:var(--text-light);font-size:.85rem}
   .loading{text-align:center;padding:30px;color:var(--text-light)}
 
-  .item-linha{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-  .item-linha select{flex:2}
-  .item-linha input{flex:1}
+  .stat-box{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:18px}
+  .stat{background:var(--creme);border-radius:10px;padding:18px 22px;min-width:170px}
+  .stat .num{font-family:'Cormorant Garamond',serif;font-size:2rem;color:var(--bordo-dark);font-weight:600;line-height:1}
+  .stat .lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-top:6px}
 
   .modal-overlay{display:none;position:fixed;inset:0;background:rgba(44,24,16,.5);z-index:500;align-items:center;justify-content:center;padding:20px}
   .modal-overlay.show{display:flex}
@@ -78,12 +81,8 @@
   .msg.err{color:#B43C3C}
   .msg.ok{color:#27AE60}
 
-  .chip-tipo{display:inline-flex;border-radius:8px;overflow:hidden;border:1px solid var(--creme-dark)}
-  .chip-tipo button{padding:8px 16px;border:none;background:var(--white);font-size:.75rem;cursor:pointer;color:var(--text-light)}
-  .chip-tipo button.active{background:var(--bordo);color:var(--creme)}
-
   @media (max-width:600px){
-    header{padding:12px 16px;gap:12px}
+    header{padding:12px 16px}
     nav.tabs{padding:0 16px}
     main{padding:20px 16px 50px}
     .card{padding:16px}
@@ -97,10 +96,10 @@
 <div id="appRoot">
 <header>
   <div>
-    <div class="brand">LUNA <span style="font-size:.7em;font-weight:400">Uniformes</span></div>
-    <div class="brand-sub">Controle de Entrega e Devolução</div>
+    <div class="brand">LUNA <span style="font-size:.7em;font-weight:400">Perdas</span></div>
+    <div class="brand-sub">Controle de Perdas</div>
   </div>
-  <div class="field" style="min-width:220px">
+  <div class="field" id="seletorLojaWrap" style="min-width:220px">
     <label style="color:var(--marrom-light)">Loja</label>
     <select id="seletorLoja" class="inp" onchange="onTrocarLoja()"></select>
   </div>
@@ -110,127 +109,16 @@
 </header>
 
 <nav class="tabs">
-  <div class="tab active" id="tabEquipe" data-tab="equipe" onclick="mudarTab('equipe')">👤 Equipe</div>
-  <div class="tab" id="tabItens" data-tab="itens" onclick="mudarTab('itens')">👕 Itens de Uniforme</div>
-  <div class="tab" id="tabMovimentos" data-tab="movimentos" onclick="mudarTab('movimentos')">📋 Entregas &amp; Devoluções</div>
-  <div class="tab" id="tabPendencias" data-tab="pendencias" onclick="mudarTab('pendencias')">⚠️ Pendências</div>
-  <div class="tab" id="tabInventario" style="display:none" data-tab="inventario" onclick="mudarTab('inventario')">📦 Inventário Geral</div>
-  <div class="tab" id="tabTriagem" style="display:none" data-tab="triagem" onclick="mudarTab('triagem')">✅ Recebimento &amp; Triagem</div>
+  <div class="tab active" id="tabNova" data-tab="nova" onclick="mudarTab('nova')">➕ Nova Perda</div>
+  <div class="tab" id="tabHistorico" data-tab="historico" onclick="mudarTab('historico')">📋 Histórico</div>
+  <div class="tab" id="tabRelatorio" style="display:none" data-tab="relatorio" onclick="mudarTab('relatorio')">📊 Relatório Mensal</div>
 </nav>
 
 <main id="mainContent"><div class="loading">Carregando…</div></main>
 </div>
 
-<!-- MODAL: Novo/Editar funcionário -->
-<div class="modal-overlay" id="modalFuncionario">
-  <div class="modal">
-    <h3 id="tituloFuncionario">Novo Colaborador</h3>
-    <div class="field" style="margin-bottom:10px"><label>Nome</label><input class="inp" id="fNome"></div>
-    <div class="field" style="margin-bottom:10px"><label>Cargo</label><input class="inp" id="fCargo" placeholder="Ex: Atendente"></div>
-    <div class="field" style="margin-bottom:10px"><label>Data de Admissão</label><input class="inp" type="date" id="fAdmissao"></div>
-    <div class="field" style="margin-bottom:10px"><label>Observações</label><textarea class="inp" id="fObs" rows="2"></textarea></div>
-    <div class="msg" id="funcMsg"></div>
-    <div class="modal-actions"><button class="btn" onclick="salvarFuncionario()" id="btnSalvarFunc">Salvar</button></div>
-    <button class="modal-close" onclick="fecharModal('modalFuncionario')">Cancelar</button>
-  </div>
-</div>
-
-<!-- MODAL: Desligar funcionário -->
-<div class="modal-overlay" id="modalDesligar">
-  <div class="modal">
-    <h3>Desligar <span id="desligarNome"></span></h3>
-    <div class="field" style="margin-bottom:10px"><label>Data de Desligamento</label><input class="inp" type="date" id="fDesligamento"></div>
-    <div id="desligarPendencias"></div>
-    <div class="msg" id="desligarMsg"></div>
-    <div class="modal-actions"><button class="btn" onclick="confirmarDesligamento()" id="btnDesligar">Confirmar Desligamento</button></div>
-    <button class="modal-close" onclick="fecharModal('modalDesligar')">Cancelar</button>
-  </div>
-</div>
-
-<!-- MODAL: Relatório de pendência (desligamento) -->
-<div class="modal-overlay" id="modalRelatorioPendencia">
-  <div class="modal" style="max-width:600px">
-    <h3>⚠️ Enviar Pendência ao Time de Rescisão</h3>
-    <p style="font-size:.85rem;color:var(--text-light);margin-bottom:14px">
-      1) Baixe o relatório em PDF. 2) Copie o e-mail abaixo e cole no seu app de e-mail, para
-      <strong id="relatorioDestinatario"></strong>. 3) Anexe o PDF baixado antes de enviar.
-    </p>
-    <button class="btn" style="margin-bottom:16px" onclick="baixarRelatorioPendenciaPDF()">⬇ Baixar Relatório em PDF</button>
-
-    <div class="field" style="margin-bottom:10px">
-      <label>Assunto <button type="button" class="btn-outline btn btn-sm" style="float:right;padding:2px 10px" onclick="copiarCampo('relatorioAssunto',this)">Copiar</button></label>
-      <input class="inp" id="relatorioAssunto" readonly>
-    </div>
-    <div class="field">
-      <label>Corpo do e-mail <button type="button" class="btn-outline btn btn-sm" style="float:right;padding:2px 10px" onclick="copiarCampo('relatorioCorpo',this)">Copiar</button></label>
-      <textarea class="inp" id="relatorioCorpo" rows="10" readonly></textarea>
-    </div>
-    <button class="modal-close" onclick="fecharModal('modalRelatorioPendencia')">Fechar</button>
-  </div>
-</div>
-
-<!-- MODAL: Novo item de uniforme -->
-<div class="modal-overlay" id="modalItem">
-  <div class="modal">
-    <h3>Novo Item de Uniforme</h3>
-    <div class="field" style="margin-bottom:10px"><label>Nome (ex: Polo M, Calça G)</label><input class="inp" id="iNome"></div>
-    <div class="field" style="margin-bottom:10px"><label>Valor Unitário (R$) — opcional, dá pra editar depois</label><input class="inp" type="number" step="0.01" min="0" id="iValor" placeholder="0,00"></div>
-    <div class="msg" id="itemMsg"></div>
-    <div class="modal-actions"><button class="btn" onclick="salvarItem()">Criar</button></div>
-    <button class="modal-close" onclick="fecharModal('modalItem')">Cancelar</button>
-  </div>
-</div>
-
-<!-- MODAL: Nova entrega/devolução -->
-<div class="modal-overlay" id="modalMovimento">
-  <div class="modal" style="max-width:600px">
-    <h3>Registrar Entrega/Devolução</h3>
-    <div class="row">
-      <div class="field" style="flex:2"><label>Colaborador</label><select class="inp" id="mFuncionario"></select></div>
-      <div class="field">
-        <label>Tipo</label>
-        <div class="chip-tipo">
-          <button type="button" class="active" onclick="setTipoMov('entrega',this)">Entrega</button>
-          <button type="button" onclick="setTipoMov('devolucao',this)">Devolução</button>
-        </div>
-      </div>
-      <div class="field"><label>Data</label><input class="inp" type="date" id="mData"></div>
-    </div>
-    <label style="font-size:.7rem;text-transform:uppercase;color:var(--text-light);font-weight:500">Peças</label>
-    <div id="itensMovimento" style="margin-top:8px"></div>
-    <button class="btn-outline btn btn-sm" style="margin-top:4px" onclick="addLinhaItem()">+ Adicionar peça</button>
-
-    <div class="field" style="margin-top:14px"><label>Termo assinado (foto ou PDF)</label><input class="inp" type="file" id="mArquivo" accept="image/*,application/pdf"></div>
-    <div class="field" style="margin-top:10px"><label>Observações</label><textarea class="inp" id="mObs" rows="2"></textarea></div>
-    <div class="msg" id="movMsg"></div>
-    <div class="modal-actions"><button class="btn" id="btnSalvarMov" onclick="salvarMovimento()">Salvar</button></div>
-    <button class="modal-close" onclick="fecharModal('modalMovimento')">Cancelar</button>
-  </div>
-</div>
-
-<!-- MODAL: Classificar triagem -->
-<div class="modal-overlay" id="modalTriagem">
-  <div class="modal">
-    <h3>Classificar: <span id="triagemProduto"></span></h3>
-    <p style="font-size:.82rem;color:var(--text-light);margin-bottom:10px">Quantidade devolvida pendente: <b id="triagemQtdTotal"></b></p>
-
-    <label style="font-size:.7rem;text-transform:uppercase;color:var(--text-light);font-weight:500">Quantas peças vão para reaproveitamento?</label>
-    <input class="inp" type="number" id="triagemQtdReaproveitar" min="0" step="1" oninput="onTriagemQtdChange()" style="margin-top:6px">
-    <p style="font-size:.78rem;color:var(--text-light);margin:6px 0 0 0">O restante (<b id="triagemQtdDescarteLabel">0</b>) será descartado.</p>
-
-    <div id="triagemMotivoWrap" style="display:none;margin-top:12px">
-      <label style="font-size:.7rem;text-transform:uppercase;color:var(--text-light);font-weight:500">Motivo do descarte (obrigatório)</label>
-      <textarea class="inp" id="triagemMotivo" rows="3" placeholder="Ex: manchado, rasgado, desgaste excessivo..." style="margin-top:6px"></textarea>
-    </div>
-    <div class="msg" id="triagemMsg"></div>
-    <div class="modal-actions"><button class="btn" onclick="salvarTriagem()">Salvar Classificação</button></div>
-    <button class="modal-close" onclick="fecharModal('modalTriagem')">Cancelar</button>
-  </div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 const SUPABASE_URL = 'https://pbuhwpcpdcnaheaywmdv.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBidWh3cGNwZGNuYWhlYXl3bWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNjU5MzksImV4cCI6MjA5MTg0MTkzOX0.Mg4PVg96ZiV3C2Rn0GLQU9c7ui_41OlU6Ldqn5jcvyY';
@@ -239,25 +127,22 @@ const PORTAL_URL = 'https://thiagodlborges.github.io/Sistema-Luna/';
 const $ = id => document.getElementById(id);
 
 const TODAS_LOJAS = ['Esplanada','Cianê','Tucuruvi','Indaiatuba','Jundiaí','Praça da Moça - Diadema','Buriti Mogi Guaçu','SP Market','Iguatemi Campinas','Shopping Itaquera','Atrium'];
+const MOTIVOS = ['Vencimento','Cristalização','Impróprio para Consumo','Extravio','Desperdício','Furto','Degustação','Treinamento','Outro'];
 
 let meuPerfil = null;
 let minhasLojas = [];
 let lojaAtual = null;
-const LOJA_PARA_SLUG = {
-  'Esplanada':'esplanada','Cianê':'ciane','Tucuruvi':'tucuruvi','Indaiatuba':'indaiatuba','Jundiaí':'jundiai',
-  'Praça da Moça - Diadema':'praca-da-moca-diadema','Buriti Mogi Guaçu':'buriti-mogi-guacu','SP Market':'sp-market',
-  'Iguatemi Campinas':'iguatemi-campinas','Shopping Itaquera':'shopping-itaquera','Atrium':'atrium',
-};
-function slugDaLoja(loja){ return LOJA_PARA_SLUG[loja] || loja.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-'); }
-
-let currentTab = 'equipe';
+let currentTab = 'nova';
 let souBackoffice = false;
-let souLeituraGeral = false;
-let catalogoUniformes = [];
-let funcionarioParaDesligar = null;
-let tipoMovimentoAtual = 'entrega';
+let souMaster = false;
+let temPapelDeLoja = false;
+let produtosPrecificacaoCache = null;
 
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtData(d){ return d ? new Date(d+'T12:00').toLocaleDateString('pt-BR') : '—'; }
+function fmtMoeda(v){ return (Number(v)||0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' }); }
+function fecharModal(id){ $(id).classList.remove('show'); }
+function showMsg(id, txt, tipo){ const m=$(id); m.textContent=txt; m.className='msg'+(txt?' show '+(tipo||''):''); }
 
 async function sairApp(){
   await sb.auth.signOut();
@@ -268,61 +153,39 @@ async function verificarAcessoEIniciar(){
   const { data: { session } } = await sb.auth.getSession();
   if (!session) { window.location.href = PORTAL_URL; return; }
 
-  const { data: ok, error } = await sb.rpc('tem_acesso', { p_slug: 'uniformes' });
+  const { data: ok, error } = await sb.rpc('tem_acesso', { p_slug: 'perdas' });
   if (error || !ok) { await sb.auth.signOut(); window.location.href = PORTAL_URL; return; }
 
   const { data: perfil } = await sb.from('perfis').select('*').eq('id', session.user.id).single();
+  if (!perfil) { window.location.href = PORTAL_URL; return; }
   meuPerfil = perfil;
+
+  temPapelDeLoja = ['loja','master_loja','master'].includes(perfil.tipo);
+  souBackoffice = perfil.tipo === 'master' || perfil.tipo === 'backoffice' || perfil.perdas_backoffice === true;
+  souMaster = perfil.tipo === 'master';
 
   if (perfil.tipo === 'master' || perfil.tipo === 'master_loja') minhasLojas = [...TODAS_LOJAS];
   else if (perfil.lojas && perfil.lojas.length) minhasLojas = perfil.lojas;
   else if (perfil.loja) minhasLojas = [perfil.loja];
   else minhasLojas = [];
 
-  souBackoffice = perfil.uniformes_backoffice === true;
-  souLeituraGeral = perfil.tipo === 'backoffice';
-  const temPapelDeGerente = ['loja','master_loja','master'].includes(perfil.tipo);
-
-  if ((souBackoffice || souLeituraGeral) && !minhasLojas.length) minhasLojas = [...TODAS_LOJAS]; // backoffice puro não tem loja própria
-
-  if (!minhasLojas.length){
-    document.getElementById('carregandoOverlay').textContent = 'Nenhuma loja vinculada ao seu usuário. Fale com o administrador.';
-    return;
+  if (!temPapelDeLoja || !minhasLojas.length) {
+    // Backoffice puro (tipo externo, sem loja) — esconde as telas de loja
+    ['tabNova','tabHistorico'].forEach(id => { const el = $(id); if (el) el.remove(); });
+    $('seletorLojaWrap').style.display = 'none';
+    currentTab = souBackoffice ? 'relatorio' : 'nova';
+  } else {
+    const sel = $('seletorLoja');
+    sel.innerHTML = minhasLojas.map(l => '<option value="'+esc(l)+'">'+esc(l)+'</option>').join('');
+    lojaAtual = minhasLojas[0];
   }
 
-  const sel = $('seletorLoja');
-  sel.innerHTML = minhasLojas.map(l => '<option value="'+esc(l)+'">'+esc(l)+'</option>').join('');
-  lojaAtual = minhasLojas[0];
+  if (souBackoffice) { $('tabRelatorio').style.display = ''; }
 
-  if (perfil.tipo !== 'master') $('tabItens').remove();
-
-  if (perfil.tipo === 'master' || souBackoffice || souLeituraGeral) {
-    $('tabInventario').style.display = '';
-  }
-  if (perfil.tipo === 'master' || souBackoffice) {
-    $('tabTriagem').style.display = '';
-  }
-  if (souLeituraGeral) {
-    // Backoffice de leitura (relatórios, todas as lojas) — só Inventário. Sem Triagem (é operacional/grava dado).
-    $('tabEquipe').remove(); $('tabMovimentos').remove(); $('tabPendencias').remove();
-    if ($('tabTriagem')) $('tabTriagem').remove();
-    $('seletorLoja').closest('.field').style.display = 'none';
-    currentTab = 'inventario';
-    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab==='inventario'));
-  } else if (souBackoffice && !temPapelDeGerente) {
-    // Backoffice operacional puro (sem papel de gerente de loja) — só inventário e triagem
-    $('tabEquipe').remove(); $('tabMovimentos').remove(); $('tabPendencias').remove();
-    $('seletorLoja').closest('.field').style.display = 'none';
-    currentTab = 'inventario';
-    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab==='inventario'));
-  }
-
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab===currentTab));
   document.getElementById('appRoot').style.display = 'block';
   document.getElementById('carregandoOverlay').remove();
   renderTab();
-
-  // Carrega catálogo de uniformes uma vez (usado em vários lugares)
-  await carregarCatalogo();
 }
 
 function onTrocarLoja(){ lojaAtual = $('seletorLoja').value; renderTab(); }
@@ -334,611 +197,308 @@ function mudarTab(tab){
 }
 
 function renderTab(){
-  if(currentTab==='equipe') renderEquipe();
-  else if(currentTab==='itens') renderItens();
-  else if(currentTab==='movimentos') renderMovimentos();
-  else if(currentTab==='pendencias') renderPendencias();
-  else if(currentTab==='inventario') renderInventarioGeral();
-  else if(currentTab==='triagem') renderTriagem();
+  if(currentTab==='nova') renderNovaPerda();
+  else if(currentTab==='historico') renderHistorico();
+  else if(currentTab==='relatorio') renderRelatorio();
 }
 
-async function carregarCatalogo(){
-  const { data } = await sb.from('catalogo_produtos').select('*').eq('categoria','Uniforme').order('nome');
-  catalogoUniformes = data || [];
-}
-
-// ── EQUIPE ─────────────────────────────────────────────
-async function renderEquipe(){
+// ── NOVA PERDA ────────────────────────────────────────────
+async function renderNovaPerda(){
   const el = $('mainContent');
-  el.innerHTML = '<div class="loading">Carregando…</div>';
-  const { data, error } = await sb.from('uniformes_funcionarios').select('*').eq('loja', lojaAtual).order('ativo',{ascending:false}).order('nome');
-  if(error){ el.innerHTML = '<div class="empty">Erro: '+esc(error.message)+'</div>'; return; }
-  const lista = data || [];
+  const hoje = new Date().toISOString().slice(0,10);
   el.innerHTML =
     '<div class="card">'+
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'+
-        '<h2 style="margin:0">Equipe — '+esc(lojaAtual)+'</h2>'+
-        '<button class="btn" onclick="abrirNovoFuncionario()">+ Novo Colaborador</button>'+
+      '<h2>Nova Perda — '+esc(lojaAtual)+'</h2>'+
+      '<div id="itemFieldsWrap" class="row"><div class="loading">Carregando…</div></div>'+
+      '<div class="row">'+
+        '<div class="field"><label>Data da perda</label><input class="inp" type="date" id="perdaData" value="'+hoje+'" max="'+hoje+'"></div>'+
+        '<div class="field"><label>Motivo</label><select class="inp" id="perdaMotivo">'+
+          MOTIVOS.map(m=>'<option value="'+m+'">'+m+'</option>').join('')+
+        '</select></div>'+
       '</div>'+
-      (lista.length ? '<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Cargo</th><th>Admissão</th><th>Status</th><th></th></tr></thead><tbody>'+
-        lista.map(f => (
-          '<tr class="'+(f.ativo?'':'inativo')+'">'+
-            '<td>'+esc(f.nome)+'</td>'+
-            '<td>'+esc(f.cargo||'—')+'</td>'+
-            '<td>'+(f.data_admissao?new Date(f.data_admissao+'T12:00').toLocaleDateString('pt-BR'):'—')+'</td>'+
-            '<td>'+(f.ativo?'<span class="badge badge-ativo">Ativo</span>':'<span class="badge badge-inativo">Desligado '+(f.data_desligamento?new Date(f.data_desligamento+'T12:00').toLocaleDateString('pt-BR'):'')+'</span>')+'</td>'+
-            '<td style="white-space:nowrap">'+
-              (f.ativo?'<button class="btn-danger" onclick=\'abrirDesligar('+JSON.stringify(f.id)+','+JSON.stringify(f.nome)+')\'>Desligar</button> ':'')+
-              (meuPerfil.tipo==='master'?'<button class="btn-danger" onclick=\'excluirFuncionario('+JSON.stringify(f.id)+','+JSON.stringify(f.nome)+')\' title="Excluir (apaga também as entregas/devoluções dele)">🗑️</button>':'')+
-            '</td>'+
-          '</tr>'
-        )).join('')+'</tbody></table></div>'
-      : '<div class="empty">Nenhum colaborador cadastrado nesta loja ainda.</div>')+
+      '<div class="field" style="margin-bottom:14px"><label>Observação (opcional)</label><textarea class="inp" id="perdaObs" rows="2"></textarea></div>'+
+      '<div class="msg" id="novaPerdaMsg"></div>'+
+      '<button class="btn" id="btnRegistrarPerda" onclick="registrarPerda()">Registrar Perda</button>'+
     '</div>';
+  await carregarSeletorProduto();
 }
 
-function abrirNovoFuncionario(){
-  $('tituloFuncionario').textContent = 'Novo Colaborador';
-  $('fNome').value=''; $('fCargo').value=''; $('fAdmissao').value=''; $('fObs').value='';
-  showMsg('funcMsg','','');
-  $('modalFuncionario').classList.add('show');
+async function carregarProdutosPrecificacao(){
+  if(produtosPrecificacaoCache) return produtosPrecificacaoCache;
+  const { data, error } = await sb.rpc('get_precificacao_produtos_ativos');
+  if(error) throw error;
+  produtosPrecificacaoCache = data || [];
+  return produtosPrecificacaoCache;
 }
 
-async function salvarFuncionario(){
-  const nome = $('fNome').value.trim();
-  if(!nome){ showMsg('funcMsg','Informe o nome.','err'); return; }
-  const btn = $('btnSalvarFunc');
+async function carregarSeletorProduto(){
+  const wrap = $('itemFieldsWrap');
+  if(!wrap) return;
+  wrap.innerHTML = '<div class="loading">Carregando…</div>';
+  showMsg('novaPerdaMsg','','');
+
+  let produtos;
+  try { produtos = await carregarProdutosPrecificacao(); }
+  catch(error){ wrap.innerHTML = '<div class="empty">Erro ao carregar produtos: '+esc(error.message)+'</div>'; return; }
+
+  if(!produtos.length){
+    wrap.innerHTML = '<div class="empty">Nenhum produto ativo cadastrado na Precificação.</div>';
+    return;
+  }
+
+  const porCategoria = {};
+  produtos.forEach(p => { (porCategoria[p.categoria] = porCategoria[p.categoria] || []).push(p); });
+
+  const optgroups = Object.keys(porCategoria).sort().map(cat =>
+    '<optgroup label="'+esc(cat)+'">'+
+      porCategoria[cat].map(p => '<option value="'+p.id+'" data-origem="'+esc(p.origem)+'">'+esc(p.nome)+'</option>').join('')+
+    '</optgroup>'
+  ).join('');
+
+  wrap.innerHTML =
+    '<div class="field" style="flex:2"><label>Produto</label><select class="inp" id="perdaProduto" onchange="atualizarUnidadeLabel()">'+
+      optgroups+
+    '</select></div>'+
+    '<div class="field"><label id="perdaQtdLabel">Quantidade</label><input class="inp" type="number" step="0.01" min="0.01" id="perdaQtd"></div>';
+  atualizarUnidadeLabel();
+}
+
+function atualizarUnidadeLabel(){
+  const sel = $('perdaProduto');
+  const lbl = $('perdaQtdLabel');
+  if(!sel || !lbl) return;
+  const opt = sel.options[sel.selectedIndex];
+  // Mesma regra do trigger fn_perdas_calcular_custo: kg só pros sabores vendidos por peso
+  // (origem fabrica_insumo). Todo o resto — inclusive Copinho/Casquinha/Cestinha, que também
+  // são categoria Gelato — é por unidade.
+  const unidade = (opt && opt.dataset.origem === 'fabrica_insumo') ? 'kg' : 'un';
+  lbl.textContent = 'Quantidade (' + unidade + ')';
+}
+
+async function registrarPerda(){
+  const data_perda = $('perdaData').value;
+  const motivo = $('perdaMotivo').value;
+  const observacao = $('perdaObs').value.trim() || null;
+  const quantidade = Number($('perdaQtd').value);
+  const produtoSel = $('perdaProduto');
+
+  if(!data_perda){ showMsg('novaPerdaMsg','Informe a data da perda.','err'); return; }
+  if(!produtoSel || !produtoSel.value){ showMsg('novaPerdaMsg','Selecione um produto.','err'); return; }
+  if(!quantidade || quantidade <= 0){ showMsg('novaPerdaMsg','Informe uma quantidade válida.','err'); return; }
+
+  // item_nome, tipo_perda, unidade e custo_unitario_aplicado são preenchidos
+  // automaticamente pelo trigger fn_perdas_calcular_custo a partir da Precificação.
+  const payload = {
+    loja: lojaAtual,
+    precificacao_produto_id: produtoSel.value,
+    quantidade,
+    motivo,
+    observacao,
+    data_perda,
+    registrado_por: meuPerfil.id,
+    registrado_por_nome: meuPerfil.nome,
+  };
+
+  const btn = $('btnRegistrarPerda');
   btn.disabled = true; btn.textContent = 'Salvando…';
-  const { error } = await sb.from('uniformes_funcionarios').insert({
-    loja: lojaAtual, nome, cargo: $('fCargo').value.trim()||null,
-    data_admissao: $('fAdmissao').value||null, observacoes: $('fObs').value.trim()||null,
-  });
-  btn.disabled = false; btn.textContent = 'Salvar';
-  if(error){ showMsg('funcMsg','Erro: '+error.message,'err'); return; }
-  fecharModal('modalFuncionario');
-  renderEquipe();
+  const { data, error } = await sb.from('perdas').insert(payload).select().single();
+  btn.disabled = false; btn.textContent = 'Registrar Perda';
+
+  if(error){ showMsg('novaPerdaMsg','Erro: '+error.message,'err'); return; }
+  showMsg('novaPerdaMsg','Perda registrada! Valor: '+fmtMoeda(data.valor_total),'ok');
+  setTimeout(() => renderNovaPerda(), 1200);
 }
 
-let pendenciasParaDesligar = [];
-
-function precoDoProduto(produto_id){
-  const p = catalogoUniformes.find(x=>x.id===produto_id);
-  return (p && p.valor_unitario != null) ? Number(p.valor_unitario) : null;
-}
-function formatarMoeda(v){
-  return v.toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
+// ── HISTÓRICO (loja) ──────────────────────────────────────
+function labelTipo(tipo){
+  return { gelato:'Gelato', revenda:'Revenda', variegato:'Variegato' }[tipo] || tipo;
 }
 
-async function abrirDesligar(id, nome){
-  funcionarioParaDesligar = id;
-  $('desligarNome').textContent = nome;
-  $('fDesligamento').value = new Date().toISOString().slice(0,10);
-  showMsg('desligarMsg','','');
-  $('desligarPendencias').innerHTML = '<div class="loading" style="padding:10px">Verificando pendências…</div>';
-  $('modalDesligar').classList.add('show');
-  const { data } = await sb.from('vw_uniformes_saldo').select('*').eq('funcionario_id', id).gt('saldo',0);
-  pendenciasParaDesligar = data || [];
-  if(pendenciasParaDesligar.length){
-    const totalEstimado = pendenciasParaDesligar.reduce((s,d)=>s+(precoDoProduto(d.produto_id)||0)*d.saldo,0);
-    $('desligarPendencias').innerHTML = '<div class="msg show err" style="background:#FDEDEC;padding:10px;border-radius:8px">⚠️ Pendências encontradas — ao confirmar, você poderá gerar o relatório e o e-mail pronto para o time de rescisão:<ul style="margin:6px 0 0 18px">'+
-      pendenciasParaDesligar.map(d=>'<li>'+esc(d.produto_nome)+': '+d.saldo+(precoDoProduto(d.produto_id)!=null?' — '+formatarMoeda(precoDoProduto(d.produto_id)*d.saldo):' <em>(sem valor cadastrado)</em>')+'</li>').join('')+'</ul>'+
-      (totalEstimado>0?'<div style="margin-top:8px;font-weight:600">Total estimado: '+formatarMoeda(totalEstimado)+'</div>':'')+'</div>';
-  } else {
-    $('desligarPendencias').innerHTML = '<div class="msg show ok">✅ Sem pendências de uniforme.</div>';
-  }
-}
-
-async function confirmarDesligamento(){
-  const btn = $('btnDesligar');
-  btn.disabled = true; btn.textContent = 'Processando…';
-  const dataDesligamento = $('fDesligamento').value || new Date().toISOString().slice(0,10);
-  const { error } = await sb.from('uniformes_funcionarios').update({
-    ativo: false, data_desligamento: dataDesligamento,
-  }).eq('id', funcionarioParaDesligar);
-  if(error){ showMsg('desligarMsg','Erro: '+error.message,'err'); btn.disabled=false; btn.textContent='Confirmar Desligamento'; return; }
-
-  const nome = $('desligarNome').textContent;
-  btn.disabled = false; btn.textContent = 'Confirmar Desligamento';
-  fecharModal('modalDesligar');
-  renderEquipe();
-
-  if(pendenciasParaDesligar.length){
-    abrirRelatorioPendencia(nome, dataDesligamento, pendenciasParaDesligar);
-  }
-}
-
-function abrirRelatorioPendencia(nome, dataDesligamento, pendencias){
-  const loja = lojaAtual;
-  const dataFmt = new Date(dataDesligamento+'T12:00').toLocaleDateString('pt-BR');
-  let totalGeral = 0;
-  let temItemSemValor = false;
-  const listaTexto = pendencias.map(p => {
-    const preco = precoDoProduto(p.produto_id);
-    if(preco == null){ temItemSemValor = true; return '- '+p.produto_nome+': '+p.saldo+' peça(s) (valor não cadastrado)'; }
-    const subtotal = preco * p.saldo;
-    totalGeral += subtotal;
-    return '- '+p.produto_nome+': '+p.saldo+' peça(s) x '+formatarMoeda(preco)+' = '+formatarMoeda(subtotal);
-  }).join('\n');
-  const linhaTotal = 'Valor total a descontar: '+formatarMoeda(totalGeral)+(temItemSemValor?' (+ itens sem valor cadastrado, verificar manualmente)':'');
-  const assunto = 'Pendência de uniforme — desligamento de '+nome+' ('+loja+')';
-  const corpo = 'Prezados,\n\n'+
-    'Informamos o desligamento do(a) colaborador(a) '+nome+', da loja '+loja+', em '+dataFmt+'.\n\n'+
-    'Segue anexo o relatório de uniformes não devolvidos, para providências quanto ao desconto na rescisão:\n\n'+
-    listaTexto+'\n\n'+
-    linhaTotal+'\n\n'+
-    'Atenciosamente,\n'+(meuPerfil.nome||'');
-
-  $('relatorioDestinatario').textContent = 'rescisao@commcenter.com.br';
-  $('relatorioAssunto').value = assunto;
-  $('relatorioCorpo').value = corpo;
-  window._relatorioDados = { nome, loja, dataFmt, pendencias, totalGeral, temItemSemValor };
-  $('modalRelatorioPendencia').classList.add('show');
-}
-
-function copiarCampo(id, btn){
-  const el = $(id);
-  el.select();
-  navigator.clipboard.writeText(el.value).then(()=>{
-    const original = btn.textContent;
-    btn.textContent = 'Copiado!';
-    setTimeout(()=>btn.textContent=original, 1500);
-  });
-}
-
-function baixarRelatorioPendenciaPDF(){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  const { nome, loja, dataFmt, pendencias, totalGeral, temItemSemValor } = window._relatorioDados;
-
-  doc.setFontSize(16);
-  doc.text('Relatório de Pendência de Uniformes', 14, 20);
-  doc.setFontSize(11);
-  doc.text('Colaborador: '+nome, 14, 32);
-  doc.text('Loja: '+loja, 14, 39);
-  doc.text('Data de Desligamento: '+dataFmt, 14, 46);
-  doc.text('Emitido em: '+new Date().toLocaleDateString('pt-BR')+' às '+new Date().toLocaleTimeString('pt-BR'), 14, 53);
-
-  doc.autoTable({
-    startY: 62,
-    head: [['Peça', 'Qtd. Pendente', 'Valor Unit.', 'Subtotal']],
-    body: pendencias.map(p => {
-      const preco = precoDoProduto(p.produto_id);
-      return [p.produto_nome, String(p.saldo), preco!=null?formatarMoeda(preco):'—', preco!=null?formatarMoeda(preco*p.saldo):'—'];
-    }),
-    headStyles: { fillColor: [107,30,46] },
-    foot: [['', '', 'TOTAL', formatarMoeda(totalGeral)]],
-    footStyles: { fillColor: [237,228,212], textColor: [44,24,16], fontStyle: 'bold' },
-  });
-
-  if(temItemSemValor){
-    doc.setFontSize(9);
-    doc.text('* Um ou mais itens sem valor unitário cadastrado — verificar manualmente.', 14, doc.lastAutoTable.finalY + 8);
-  }
-
-  doc.save('pendencia-uniforme-'+nome.replace(/\s+/g,'-').toLowerCase()+'.pdf');
-}
-
-async function excluirFuncionario(id, nome){
-  if(meuPerfil.tipo !== 'master'){ alert('Só o master pode excluir registros.'); return; }
-  if(!confirm('Excluir "'+nome+'" e TODO o histórico de entregas/devoluções dele? Essa ação não pode ser desfeita.')) return;
-  const { error } = await sb.from('uniformes_funcionarios').delete().eq('id', id);
-  if(error){ alert('Erro ao excluir: '+error.message); return; }
-  renderEquipe();
-}
-
-// ── ITENS DE UNIFORME ──────────────────────────────────
-async function renderItens(){
-  await carregarCatalogo();
+async function renderHistorico(){
   const el = $('mainContent');
+  const mesDefault = new Date().toISOString().slice(0,7);
   el.innerHTML =
     '<div class="card">'+
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'+
-        '<h2 style="margin:0">Itens de Uniforme (catálogo compartilhado com Pedidos-Fábrica)</h2>'+
-        '<button class="btn" onclick="abrirNovoItem()">+ Novo Item</button>'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;margin-bottom:14px">'+
+        '<h2 style="margin:0">Histórico — '+esc(lojaAtual)+'</h2>'+
+        '<div class="field"><label>Mês</label><input class="inp" type="month" id="histMes" value="'+mesDefault+'" onchange="carregarHistorico()"></div>'+
       '</div>'+
-      (catalogoUniformes.length ? '<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Valor Unit. (R$)</th><th>Status</th><th></th></tr></thead><tbody>'+
-        catalogoUniformes.map(p => (
-          '<tr class="'+(p.ativo?'':'inativo')+'">'+
-            '<td>'+esc(p.nome)+'</td>'+
-            '<td><input class="inp" type="number" step="0.01" min="0" style="max-width:110px" value="'+(p.valor_unitario??'')+'" placeholder="0,00" onblur=\'salvarValorItem('+JSON.stringify(p.id)+',this.value)\'></td>'+
-            '<td>'+(p.ativo?'<span class="badge badge-ativo">Ativo</span>':'<span class="badge badge-inativo">Inativo</span>')+'</td>'+
-            '<td style="white-space:nowrap">'+
-              '<button class="btn-outline btn btn-sm" onclick=\'toggleAtivoItem('+JSON.stringify(p.id)+','+(!p.ativo)+')\'>'+(p.ativo?'Desativar':'Ativar')+'</button> '+
-              '<button class="btn-danger" onclick=\'excluirItem('+JSON.stringify(p.id)+','+JSON.stringify(p.nome)+')\'>🗑️</button>'+
-            '</td>'+
-          '</tr>'
-        )).join('')+'</tbody></table></div>'
-      : '<div class="empty">Nenhum item de uniforme cadastrado.</div>')+
+      '<div id="historicoTabela" class="loading">Carregando…</div>'+
     '</div>';
+  await carregarHistorico();
 }
 
-async function salvarValorItem(id, valor){
-  const num = valor === '' ? null : parseFloat(valor);
-  await sb.from('catalogo_produtos').update({ valor_unitario: num }).eq('id', id);
-  const item = catalogoUniformes.find(p=>p.id===id);
-  if(item) item.valor_unitario = num;
-}
+async function carregarHistorico(){
+  const mes = $('histMes').value;
+  const [ano, mesNum] = mes.split('-').map(Number);
+  const primeiroDia = mes+'-01';
+  const ultimoDia = new Date(ano, mesNum, 0).toISOString().slice(0,10);
 
-function abrirNovoItem(){ $('iNome').value=''; $('iValor').value=''; showMsg('itemMsg','',''); $('modalItem').classList.add('show'); }
+  const { data, error } = await sb.from('perdas').select('*')
+    .eq('loja', lojaAtual)
+    .gte('data_perda', primeiroDia).lte('data_perda', ultimoDia)
+    .order('data_perda', { ascending:false });
 
-async function salvarItem(){
-  const nome = $('iNome').value.trim();
-  if(!nome){ showMsg('itemMsg','Informe o nome do item.','err'); return; }
-  const valorRaw = $('iValor').value;
-  const { error } = await sb.from('catalogo_produtos').insert({ nome, categoria:'Uniforme', ativo:true, valor_unitario: valorRaw===''?null:parseFloat(valorRaw) });
-  if(error){ showMsg('itemMsg','Erro: '+error.message,'err'); return; }
-  fecharModal('modalItem');
-  renderItens();
-}
-
-async function toggleAtivoItem(id, novoAtivo){
-  await sb.from('catalogo_produtos').update({ ativo: novoAtivo }).eq('id', id);
-  renderItens();
-}
-
-async function excluirItem(id, nome){
-  if(!confirm('Excluir "'+nome+'" do catálogo de uniformes? Isso também o remove do Pedidos-Fábrica.\nSe já tiver entregas registradas, prefira "Desativar" em vez de excluir.')) return;
-  const { error } = await sb.from('catalogo_produtos').delete().eq('id', id);
-  if(error){ alert('Não foi possível excluir — provavelmente já existem entregas com esse item.\nUse "Desativar" em vez de excluir.\n\nDetalhe: '+error.message); return; }
-  renderItens();
-}
-
-// ── ENTREGAS & DEVOLUÇÕES ──────────────────────────────
-async function renderMovimentos(){
-  const el = $('mainContent');
-  el.innerHTML = '<div class="loading">Carregando…</div>';
-  const { data: funcs } = await sb.from('uniformes_funcionarios').select('id,nome').eq('loja', lojaAtual).eq('ativo', true).order('nome');
-  const { data: movs, error } = await sb.from('uniformes_entregas').select('*, uniformes_funcionarios(nome), uniformes_entrega_itens(quantidade, catalogo_produtos(nome))').eq('loja', lojaAtual).order('data',{ascending:false}).order('criado_em',{ascending:false});
-
-  if(error){ el.innerHTML = '<div class="empty">Erro: '+esc(error.message)+'</div>'; return; }
-
-  const uploadModelo = meuPerfil.tipo === 'master'
-    ? '<div style="margin-top:10px"><label style="font-size:.7rem;text-transform:uppercase;color:var(--text-light);font-weight:500">Substituir modelo (só master)</label><br>'+
-      '<input class="inp" type="file" id="mModeloArquivo" accept="application/pdf,image/*" style="margin-top:4px"> '+
-      '<button class="btn btn-sm" onclick="enviarModeloTermo()">Enviar</button>'+
-      '<div class="msg" id="modeloMsg"></div></div>'
-    : '';
-
-  el.innerHTML =
-    '<div class="card" style="background:var(--creme)">'+
-      '<h2 style="margin-bottom:8px">📄 Modelo do Termo (em branco)</h2>'+
-      '<p style="font-size:.82rem;color:var(--text-light);margin-bottom:10px">Baixe, imprima na loja e colete a assinatura do colaborador antes de anexar o termo preenchido no registro abaixo.</p>'+
-      '<button class="btn-outline btn" onclick="baixarModeloTermo()">⬇ Baixar modelo</button>'+
-      uploadModelo+
-    '</div>'+
-    '<div class="card">'+
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'+
-        '<h2 style="margin:0">Entregas &amp; Devoluções — '+esc(lojaAtual)+'</h2>'+
-        '<button class="btn" onclick="abrirNovoMovimento()">+ Registrar</button>'+
-      '</div>'+
-      ((movs&&movs.length) ? '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Colaborador</th><th>Tipo</th><th>Itens</th><th>Termo</th><th></th></tr></thead><tbody>'+
-        movs.map(m => (
-          '<tr><td>'+new Date(m.data+'T12:00').toLocaleDateString('pt-BR')+'</td>'+
-          '<td>'+esc(m.uniformes_funcionarios?.nome||'—')+'</td>'+
-          '<td>'+(m.tipo==='entrega'?'📥 Entrega':'📤 Devolução')+'</td>'+
-          '<td>'+(m.uniformes_entrega_itens||[]).map(i=>esc(i.catalogo_produtos?.nome)+' ('+i.quantidade+')').join(', ')+'</td>'+
-          '<td>'+(m.termo_path?'<button class="btn-outline btn btn-sm" onclick=\'baixarTermo('+JSON.stringify(m.termo_path)+')\'>Ver termo</button>':'<span style="color:var(--text-light);font-size:.75rem">sem arquivo</span>')+'</td>'+
-          '<td>'+(meuPerfil.tipo==='master'?'<button class="btn-danger" onclick=\'excluirMovimento('+JSON.stringify(m.id)+','+JSON.stringify(m.termo_path)+')\' title="Excluir registro">🗑️</button>':'')+'</td>'+
-          '</tr>'
-        )).join('')+'</tbody></table></div>'
-      : '<div class="empty">Nenhum registro ainda.</div>')+
-    '</div>';
-
-  window._funcsAtivos = funcs||[];
-}
-
-async function baixarModeloTermo(){
-  const { data: arquivos, error: listErr } = await sb.storage.from('uniformes-termos').list('_modelos');
-  const encontrado = (arquivos||[]).find(a => a.name.startsWith('termo-uniforme'));
-  if(listErr || !encontrado){ alert('O modelo ainda não foi enviado pelo administrador.'); return; }
-  const { data, error } = await sb.storage.from('uniformes-termos').createSignedUrl('_modelos/'+encontrado.name, 300);
-  if(error){ alert('Erro ao abrir o modelo: '+error.message); return; }
-  window.open(data.signedUrl, '_blank');
-}
-
-async function enviarModeloTermo(){
-  const arquivo = $('mModeloArquivo').files[0];
-  if(!arquivo){ showMsg('modeloMsg','Selecione um arquivo.','err'); return; }
-  const { data: antigos } = await sb.storage.from('uniformes-termos').list('_modelos');
-  const paraRemover = (antigos||[]).filter(a => a.name.startsWith('termo-uniforme')).map(a => '_modelos/'+a.name);
-  if(paraRemover.length) await sb.storage.from('uniformes-termos').remove(paraRemover);
-  const ext = arquivo.name.split('.').pop();
-  const { error } = await sb.storage.from('uniformes-termos').upload('_modelos/termo-uniforme.'+ext, arquivo, { upsert: true });
-  if(error){ showMsg('modeloMsg','Erro: '+error.message,'err'); return; }
-  showMsg('modeloMsg','Modelo atualizado!','ok');
-}
-
-let saldoFuncionarioAtual = {}; // produto_id -> saldo atual (para bloquear devolução acima do que foi entregue)
-
-async function abrirNovoMovimento(){
-  const sel = $('mFuncionario');
-  sel.innerHTML = (window._funcsAtivos||[]).map(f=>'<option value="'+f.id+'">'+esc(f.nome)+'</option>').join('');
-  if(!sel.innerHTML){ alert('Cadastre um colaborador ativo nesta loja antes de registrar entrega/devolução.'); return; }
-  sel.onchange = carregarSaldoFuncionarioSelecionado;
-  tipoMovimentoAtual = 'entrega';
-  document.querySelectorAll('#modalMovimento .chip-tipo button').forEach((b,i)=>b.classList.toggle('active', i===0));
-  $('mData').value = new Date().toISOString().slice(0,10);
-  $('itensMovimento').innerHTML = '';
-  addLinhaItem();
-  $('mArquivo').value = '';
-  $('mObs').value = '';
-  showMsg('movMsg','','');
-  $('modalMovimento').classList.add('show');
-  await carregarSaldoFuncionarioSelecionado();
-}
-
-async function carregarSaldoFuncionarioSelecionado(){
-  const funcionario_id = $('mFuncionario').value;
-  saldoFuncionarioAtual = {};
-  if(!funcionario_id) return;
-  const { data } = await sb.from('vw_uniformes_saldo').select('produto_id,saldo').eq('funcionario_id', funcionario_id);
-  (data||[]).forEach(s => { saldoFuncionarioAtual[s.produto_id] = s.saldo; });
-}
-
-function setTipoMov(tipo, btn){
-  tipoMovimentoAtual = tipo;
-  document.querySelectorAll('#modalMovimento .chip-tipo button').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-}
-
-function addLinhaItem(){
-  const div = document.createElement('div');
-  div.className = 'item-linha';
-  div.innerHTML =
-    '<select class="inp item-produto">'+catalogoUniformes.filter(p=>p.ativo).map(p=>'<option value="'+p.id+'">'+esc(p.nome)+'</option>').join('')+'</select>'+
-    '<input class="inp item-qtd" type="number" min="1" value="1" style="max-width:80px">'+
-    '<button type="button" class="btn-danger" onclick="this.parentElement.remove()">✕</button>';
-  $('itensMovimento').appendChild(div);
-}
-
-async function salvarMovimento(){
-  const funcionario_id = $('mFuncionario').value;
-  const data = $('mData').value;
-  if(!funcionario_id || !data){ showMsg('movMsg','Preencha colaborador e data.','err'); return; }
-  const linhas = [...document.querySelectorAll('#itensMovimento .item-linha')].map(l => ({
-    produto_id: l.querySelector('.item-produto').value,
-    quantidade: parseInt(l.querySelector('.item-qtd').value) || 0,
-  })).filter(l => l.quantidade > 0);
-  if(!linhas.length){ showMsg('movMsg','Adicione ao menos uma peça com quantidade válida.','err'); return; }
-
-  const arquivoCheck = $('mArquivo').files[0];
-  if(!arquivoCheck){ showMsg('movMsg','Anexe o termo assinado (foto ou PDF) — é obrigatório para registrar entrega ou devolução.','err'); return; }
-
-  if(tipoMovimentoAtual === 'devolucao'){
-    for(const l of linhas){
-      const disponivel = saldoFuncionarioAtual[l.produto_id] || 0;
-      if(l.quantidade > disponivel){
-        const nomeProduto = catalogoUniformes.find(p=>p.id===l.produto_id)?.nome || 'item';
-        showMsg('movMsg','Não é possível devolver '+l.quantidade+' de "'+nomeProduto+'" — o colaborador tem apenas '+disponivel+' em posse.','err');
-        return;
-      }
-    }
-  }
-
-  const btn = $('btnSalvarMov');
-  btn.disabled = true; btn.textContent = 'Salvando…';
-
-  let termo_path = null, termo_nome_original = null;
-  const arquivo = $('mArquivo').files[0];
-  if(arquivo){
-    const ext = arquivo.name.split('.').pop();
-    const path = slugDaLoja(lojaAtual)+'/'+funcionario_id+'/'+Date.now()+'.'+ext;
-    const { error: upErr } = await sb.storage.from('uniformes-termos').upload(path, arquivo);
-    if(upErr){ showMsg('movMsg','Erro ao enviar arquivo: '+upErr.message,'err'); btn.disabled=false; btn.textContent='Salvar'; return; }
-    termo_path = path; termo_nome_original = arquivo.name;
-  }
-
-  const { data: entrega, error: e1 } = await sb.from('uniformes_entregas').insert({
-    funcionario_id, loja: lojaAtual, tipo: tipoMovimentoAtual, data,
-    termo_path, termo_nome_original, observacoes: $('mObs').value.trim()||null,
-    criado_por: meuPerfil.id,
-  }).select().single();
-
-  if(e1){ showMsg('movMsg','Erro: '+e1.message,'err'); btn.disabled=false; btn.textContent='Salvar'; return; }
-
-  const itensParaInserir = linhas.map(l => ({ entrega_id: entrega.id, produto_id: l.produto_id, quantidade: l.quantidade }));
-  const { error: e2 } = await sb.from('uniformes_entrega_itens').insert(itensParaInserir);
-
-  btn.disabled = false; btn.textContent = 'Salvar';
-  if(e2){ showMsg('movMsg','Erro ao salvar itens: '+e2.message,'err'); return; }
-
-  fecharModal('modalMovimento');
-  renderMovimentos();
-}
-
-async function baixarTermo(path){
-  const { data, error } = await sb.storage.from('uniformes-termos').createSignedUrl(path, 300);
-  if(error){ alert('Erro ao abrir o arquivo: '+error.message); return; }
-  window.open(data.signedUrl, '_blank');
-}
-
-async function excluirMovimento(id, termoPath){
-  if(meuPerfil.tipo !== 'master'){ alert('Só o master pode excluir registros.'); return; }
-  if(!confirm('Excluir este registro de entrega/devolução? Essa ação não pode ser desfeita.')) return;
-  const { error } = await sb.from('uniformes_entregas').delete().eq('id', id);
-  if(error){ alert('Erro ao excluir: '+error.message); return; }
-  if(termoPath){ await sb.storage.from('uniformes-termos').remove([termoPath]); }
-  renderMovimentos();
-}
-
-// ── PENDÊNCIAS ──────────────────────────────────────────
-// ── INVENTÁRIO GERAL (todas as lojas — master e backoffice) ──
-async function renderInventarioGeral(){
-  const el = $('mainContent');
-  el.innerHTML = '<div class="loading">Carregando…</div>';
-  const { data, error } = await sb.from('vw_uniformes_inventario_geral').select('*').order('loja').order('funcionario_nome');
-  if(error){ el.innerHTML = '<div class="empty">Erro: '+esc(error.message)+'</div>'; return; }
-  window._inventarioGeral = data || [];
-  renderTabelaInventario();
-}
-
-function renderTabelaInventario(){
-  const el = $('mainContent');
-  const filtro = (window._filtroInventario||'').toLowerCase();
-  const lista = (window._inventarioGeral||[]).filter(p =>
-    !filtro || p.loja.toLowerCase().includes(filtro) || p.funcionario_nome.toLowerCase().includes(filtro) || p.produto_nome.toLowerCase().includes(filtro)
-  );
-  const valorTotal = lista.reduce((s,p)=>s+(p.valor_unitario||0)*p.saldo,0);
-  el.innerHTML =
-    '<div class="card">'+
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">'+
-        '<h2 style="margin:0">Inventário Geral de Uniformes — Todas as Lojas</h2>'+
-        '<div style="display:flex;gap:8px">'+
-          '<input class="inp" placeholder="Buscar loja, colaborador ou peça..." style="min-width:220px" value="'+esc(window._filtroInventario||'')+'" oninput="window._filtroInventario=this.value;renderTabelaInventario()">'+
-          '<button class="btn-outline btn btn-sm" onclick="exportarInventarioCSV()">⬇ Exportar CSV</button>'+
-        '</div>'+
-      '</div>'+
-      '<div style="margin-bottom:10px;font-size:.85rem;color:var(--text-light)">Total de peças em posse: <b>'+lista.reduce((s,p)=>s+p.saldo,0)+'</b> — Valor estimado em posse: <b>'+formatarMoeda(valorTotal)+'</b></div>'+
-      (lista.length ? '<div class="table-wrap"><table><thead><tr><th>Loja</th><th>Colaborador</th><th>Situação</th><th>Peça</th><th>Qtd.</th><th>Valor</th></tr></thead><tbody>'+
-        lista.map(p => (
-          '<tr>'+
-            '<td>'+esc(p.loja)+'</td>'+
-            '<td>'+esc(p.funcionario_nome)+'</td>'+
-            '<td>'+(p.funcionario_ativo?'<span class="badge badge-ativo">Ativo</span>':'<span class="badge badge-pend">Desligado</span>')+'</td>'+
-            '<td>'+esc(p.produto_nome)+'</td>'+
-            '<td>'+p.saldo+'</td>'+
-            '<td>'+(p.valor_unitario!=null?formatarMoeda(p.valor_unitario*p.saldo):'—')+'</td>'+
-          '</tr>'
-        )).join('')+'</tbody></table></div>'
-      : '<div class="empty">Nenhuma peça em posse no momento.</div>')+
-    '</div>';
-}
-
-function exportarInventarioCSV(){
-  const lista = window._inventarioGeral||[];
-  const linhas = [['Loja','Colaborador','Situação','Peça','Quantidade','Valor Unitário','Valor Total']];
-  lista.forEach(p => linhas.push([p.loja, p.funcionario_nome, p.funcionario_ativo?'Ativo':'Desligado', p.produto_nome, p.saldo, p.valor_unitario??'', p.valor_unitario!=null?(p.valor_unitario*p.saldo).toFixed(2):'']));
-  const csv = linhas.map(l => l.map(c => '"'+String(c).replace(/"/g,'""')+'"').join(';')).join('\n');
-  const blob = new Blob(['\uFEFF'+csv], { type:'text/csv;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'inventario-uniformes-'+new Date().toISOString().slice(0,10)+'.csv';
-  a.click();
-}
-
-// ── RECEBIMENTO & TRIAGEM (master e backoffice) ──
-async function renderTriagem(){
-  const el = $('mainContent');
-  el.innerHTML = '<div class="loading">Carregando…</div>';
-  const { data, error } = await sb.from('vw_uniformes_pendentes_triagem').select('*').order('data',{ascending:false});
-  if(error){ el.innerHTML = '<div class="empty">Erro: '+esc(error.message)+'</div>'; return; }
+  if(error){ $('historicoTabela').innerHTML = '<div class="empty">Erro: '+esc(error.message)+'</div>'; return; }
   const lista = data || [];
-  el.innerHTML =
+  if(!lista.length){ $('historicoTabela').innerHTML = '<div class="empty">Nenhuma perda registrada neste mês.</div>'; return; }
+
+  const totalValor = lista.reduce((a,p)=>a+Number(p.valor_total),0);
+  $('historicoTabela').innerHTML =
+    '<div class="stat-box"><div class="stat"><div class="num">'+fmtMoeda(totalValor)+'</div><div class="lbl">Total do mês</div></div>'+
+    '<div class="stat"><div class="num">'+lista.length+'</div><div class="lbl">Lançamentos</div></div></div>'+
+    '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Item</th><th>Qtd</th><th>Motivo</th><th>Observação</th><th>Valor</th>'+(souMaster?'<th></th>':'')+'</tr></thead><tbody>'+
+      lista.map(p => (
+        '<tr>'+
+          '<td>'+fmtData(p.data_perda)+'</td>'+
+          '<td><span class="badge badge-tipo">'+labelTipo(p.tipo_perda)+'</span></td>'+
+          '<td>'+esc(p.item_nome)+'</td>'+
+          '<td>'+Number(p.quantidade)+' '+esc(p.unidade)+'</td>'+
+          '<td>'+esc(p.motivo)+'</td>'+
+          '<td>'+esc(p.observacao||'—')+'</td>'+
+          '<td>'+fmtMoeda(p.valor_total)+'</td>'+
+          (souMaster ? '<td><button class="btn-danger" onclick="excluirPerda(\''+p.id+'\')">Excluir</button></td>' : '')+
+        '</tr>'
+      )).join('')+
+    '</tbody></table></div>'+
+    (souMaster
+      ? '<p style="font-size:.72rem;color:var(--text-light);margin-top:10px">Só o master pode excluir lançamentos por aqui — a exclusão é definitiva.</p>'
+      : '<p style="font-size:.72rem;color:var(--text-light);margin-top:10px">Lançamentos não podem ser editados ou excluídos por aqui. Em caso de erro, fale com o master.</p>');
+}
+
+async function excluirPerda(id){
+  if(!confirm('Excluir este lançamento de perda? Essa ação não pode ser desfeita.')) return;
+  const { error } = await sb.from('perdas').delete().eq('id', id);
+  if(error){ alert('Erro ao excluir: '+error.message); return; }
+  carregarHistorico();
+}
+
+// ── RELATÓRIO MENSAL (master/backoffice) ──────────────────
+async function renderRelatorio(){
+  const mesDefault = new Date().toISOString().slice(0,7);
+  $('mainContent').innerHTML =
     '<div class="card">'+
-      '<h2>Recebimento &amp; Triagem de Devoluções</h2>'+
-      '<p style="font-size:.82rem;color:var(--text-light);margin-bottom:14px">Peças devolvidas pelas lojas, aguardando avaliação: reaproveitar ou descartar.</p>'+
-      (lista.length ? '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Loja</th><th>Colaborador</th><th>Peça</th><th>Qtd.</th><th>Termo</th><th>Destino</th></tr></thead><tbody>'+
-        lista.map(t => (
-          '<tr id="triagem-'+t.entrega_item_id+'">'+
-            '<td>'+new Date(t.data+'T12:00').toLocaleDateString('pt-BR')+'</td>'+
-            '<td>'+esc(t.loja)+'</td>'+
-            '<td>'+esc(t.funcionario_nome)+'</td>'+
-            '<td>'+esc(t.produto_nome)+'</td>'+
-            '<td>'+t.quantidade+'</td>'+
-            '<td>'+(t.termo_path?'<button class="btn-outline btn btn-sm" onclick=\'baixarTermo('+JSON.stringify(t.termo_path)+')\'>Ver termo</button>':'—')+'</td>'+
-            '<td><button class="btn-outline btn btn-sm" onclick=\'abrirTriagem('+JSON.stringify(t.entrega_item_id)+','+JSON.stringify(t.produto_nome)+','+t.quantidade+')\'>Classificar</button></td>'+
-          '</tr>'
-        )).join('')+'</tbody></table></div>'
-      : '<div class="empty">Nenhuma devolução pendente de triagem no momento.</div>')+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;margin-bottom:14px">'+
+        '<div class="field"><label>Mês de referência</label><input class="inp" type="month" id="relMes" value="'+mesDefault+'" onchange="carregarRelatorio()"></div>'+
+        '<button class="btn-outline btn btn-sm" onclick="exportarRelatorioExcel()">⬇ Exportar Excel</button>'+
+      '</div>'+
+      '<div id="relatorioConteudo" class="loading">Carregando…</div>'+
     '</div>';
+  await carregarRelatorio();
 }
 
-let triagemItemAtual = null;
+async function carregarRelatorio(){
+  const mes = $('relMes').value;
+  const mesRef = mes+'-01';
+  const [ano, mesNum] = mes.split('-').map(Number);
+  const ultimoDia = new Date(ano, mesNum, 0).toISOString().slice(0,10);
 
-let triagemProdutoNomeAtual = null;
-let triagemQuantidadeAtual = 0;
+  const [resumoR, detalheR] = await Promise.all([
+    sb.from('vw_perdas_resumo_mensal').select('*').eq('mes_referencia', mesRef),
+    sb.from('perdas').select('*').gte('data_perda', mesRef).lte('data_perda', ultimoDia).order('loja').order('data_perda'),
+  ]);
+  if(resumoR.error){ $('relatorioConteudo').innerHTML = '<div class="empty">Erro: '+esc(resumoR.error.message)+'</div>'; return; }
+  const resumo = resumoR.data || [];
+  const detalhe = detalheR.data || [];
+  window.__relatorioResumoCache = resumo;
+  window.__relatorioDetalheCache = detalhe;
 
-function abrirTriagem(entrega_item_id, produtoNome, quantidade){
-  triagemItemAtual = entrega_item_id;
-  triagemProdutoNomeAtual = produtoNome;
-  triagemQuantidadeAtual = quantidade;
-  $('triagemProduto').textContent = produtoNome;
-  $('triagemQtdTotal').textContent = quantidade;
-  $('triagemQtdReaproveitar').max = quantidade;
-  $('triagemQtdReaproveitar').value = quantidade;
-  onTriagemQtdChange();
-  showMsg('triagemMsg','','');
-  $('modalTriagem').classList.add('show');
+  // Agrega por loja
+  const porLoja = {};
+  resumo.forEach(r => {
+    if(!porLoja[r.loja]) porLoja[r.loja] = { qtd:0, valor:0 };
+    porLoja[r.loja].qtd += Number(r.qtd_lancamentos);
+    porLoja[r.loja].valor += Number(r.valor_total);
+  });
+  const lojas = Object.keys(porLoja).sort();
+  const totalGeral = lojas.reduce((a,l)=>a+porLoja[l].valor,0);
+  const qtdGeral = lojas.reduce((a,l)=>a+porLoja[l].qtd,0);
+
+  // Agrega por tipo_perda
+  const porTipo = {};
+  resumo.forEach(r => {
+    porTipo[r.tipo_perda] = (porTipo[r.tipo_perda]||0) + Number(r.valor_total);
+  });
+
+  // Agrega por motivo (não vem na view de resumo, calculado a partir do detalhe)
+  const porMotivo = {};
+  detalhe.forEach(p => {
+    if(!porMotivo[p.motivo]) porMotivo[p.motivo] = { qtd:0, valor:0 };
+    porMotivo[p.motivo].qtd += 1;
+    porMotivo[p.motivo].valor += Number(p.valor_total);
+  });
+  const motivosOrdenados = Object.keys(porMotivo).sort((a,b) => porMotivo[b].valor - porMotivo[a].valor);
+  const totalMotivo = motivosOrdenados.reduce((a,m)=>a+porMotivo[m].valor,0);
+
+  const tabelaLoja = lojas.length ?
+    '<div class="table-wrap"><table><thead><tr><th>Loja</th><th>Lançamentos</th><th>Valor Total</th></tr></thead><tbody>'+
+      lojas.map(l => '<tr><td>'+esc(l)+'</td><td>'+porLoja[l].qtd+'</td><td>'+fmtMoeda(porLoja[l].valor)+'</td></tr>').join('')+
+      '<tr class="total-row"><td>Total Geral</td><td>'+qtdGeral+'</td><td>'+fmtMoeda(totalGeral)+'</td></tr>'+
+    '</tbody></table></div>'
+    : '<div class="empty">Nenhuma perda registrada neste mês.</div>';
+
+  const tabelaTipo = Object.keys(porTipo).length ?
+    '<div class="table-wrap"><table><thead><tr><th>Tipo</th><th>Valor Total</th></tr></thead><tbody>'+
+      Object.keys(porTipo).map(t => '<tr><td>'+labelTipo(t)+'</td><td>'+fmtMoeda(porTipo[t])+'</td></tr>').join('')+
+    '</tbody></table></div>' : '';
+
+  const tabelaMotivo = motivosOrdenados.length ?
+    '<div class="table-wrap"><table><thead><tr><th>Motivo</th><th>Lançamentos</th><th>Valor Total</th><th>% do Total</th></tr></thead><tbody>'+
+      motivosOrdenados.map(m => '<tr><td>'+esc(m)+'</td><td>'+porMotivo[m].qtd+'</td><td>'+fmtMoeda(porMotivo[m].valor)+'</td><td>'+(totalMotivo ? (porMotivo[m].valor/totalMotivo*100).toFixed(1) : '0.0')+'%</td></tr>').join('')+
+    '</tbody></table></div>' : '<div class="empty">Nenhuma perda registrada neste mês.</div>';
+
+  $('relatorioConteudo').innerHTML =
+    '<h3 style="font-family:\'Cormorant Garamond\',serif;font-size:1.05rem;color:var(--bordo-dark);margin-bottom:8px">Resumo por loja</h3>'+
+    tabelaLoja+
+    '<h3 style="font-family:\'Cormorant Garamond\',serif;font-size:1.05rem;color:var(--bordo-dark);margin:22px 0 8px">Resumo por tipo de perda</h3>'+
+    tabelaTipo+
+    '<h3 style="font-family:\'Cormorant Garamond\',serif;font-size:1.05rem;color:var(--bordo-dark);margin:22px 0 8px">Resumo por motivo</h3>'+
+    tabelaMotivo;
 }
 
-function onTriagemQtdChange(){
-  let qtd = parseInt($('triagemQtdReaproveitar').value);
-  if(isNaN(qtd) || qtd < 0) qtd = 0;
-  if(qtd > triagemQuantidadeAtual) qtd = triagemQuantidadeAtual;
-  $('triagemQtdReaproveitar').value = qtd;
-  const descarte = triagemQuantidadeAtual - qtd;
-  $('triagemQtdDescarteLabel').textContent = descarte;
-  $('triagemMotivoWrap').style.display = descarte > 0 ? 'block' : 'none';
+function exportarRelatorioExcel(){
+  const detalhe = window.__relatorioDetalheCache || [];
+  if(!detalhe.length){ alert('Não há dados para exportar.'); return; }
+  const mes = $('relMes').value;
+
+  const porLoja = {};
+  detalhe.forEach(p => {
+    if(!porLoja[p.loja]) porLoja[p.loja] = { qtd:0, valor:0 };
+    porLoja[p.loja].qtd += 1;
+    porLoja[p.loja].valor += Number(p.valor_total);
+  });
+  const linhasResumo = Object.keys(porLoja).sort().map(l => ({
+    Loja: l, Lançamentos: porLoja[l].qtd, 'Valor Total (R$)': porLoja[l].valor,
+  }));
+  const totalGeral = Object.values(porLoja).reduce((a,l)=>a+l.valor,0);
+  const qtdGeral = Object.values(porLoja).reduce((a,l)=>a+l.qtd,0);
+  linhasResumo.push({ Loja: 'TOTAL GERAL', Lançamentos: qtdGeral, 'Valor Total (R$)': totalGeral });
+
+  const linhasDetalhe = detalhe.map(p => ({
+    Loja: p.loja, Data: fmtData(p.data_perda), Tipo: labelTipo(p.tipo_perda), Item: p.item_nome,
+    Quantidade: Number(p.quantidade), Unidade: p.unidade, Motivo: p.motivo,
+    Observação: p.observacao||'', 'Valor (R$)': Number(p.valor_total),
+  }));
+
+  const porMotivo = {};
+  detalhe.forEach(p => {
+    if(!porMotivo[p.motivo]) porMotivo[p.motivo] = { qtd:0, valor:0 };
+    porMotivo[p.motivo].qtd += 1;
+    porMotivo[p.motivo].valor += Number(p.valor_total);
+  });
+  const linhasMotivo = Object.keys(porMotivo).sort((a,b)=>porMotivo[b].valor-porMotivo[a].valor).map(m => ({
+    Motivo: m, Lançamentos: porMotivo[m].qtd, 'Valor Total (R$)': porMotivo[m].valor,
+  }));
+  const totalMotivo = Object.values(porMotivo).reduce((a,l)=>a+l.valor,0);
+  const qtdMotivo = Object.values(porMotivo).reduce((a,l)=>a+l.qtd,0);
+  linhasMotivo.push({ Motivo: 'TOTAL GERAL', Lançamentos: qtdMotivo, 'Valor Total (R$)': totalMotivo });
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(linhasResumo), 'Resumo por Loja');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(linhasMotivo), 'Resumo por Motivo');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(linhasDetalhe), 'Lançamentos Detalhados');
+  XLSX.writeFile(wb, 'perdas-'+mes+'.xlsx');
 }
-
-async function salvarTriagem(){
-  const qtdReaproveitar = parseInt($('triagemQtdReaproveitar').value) || 0;
-  const qtdDescarte = triagemQuantidadeAtual - qtdReaproveitar;
-  const motivo = $('triagemMotivo').value.trim();
-  if(qtdDescarte > 0 && !motivo){ showMsg('triagemMsg','Informe o motivo do descarte.','err'); return; }
-  if(qtdReaproveitar === 0 && qtdDescarte === 0){ showMsg('triagemMsg','Informe uma quantidade v\u00e1lida.','err'); return; }
-
-  const linhas = [];
-  if(qtdReaproveitar > 0) linhas.push({ entrega_item_id: triagemItemAtual, destino:'reaproveitar', quantidade:qtdReaproveitar, triado_por: meuPerfil.id });
-  if(qtdDescarte > 0) linhas.push({ entrega_item_id: triagemItemAtual, destino:'descarte', quantidade:qtdDescarte, motivo_descarte: motivo, triado_por: meuPerfil.id });
-
-  const { error } = await sb.from('uniformes_triagem').insert(linhas);
-  if(error){ showMsg('triagemMsg','Erro: '+error.message,'err'); return; }
-
-  if(qtdReaproveitar > 0){
-    try{
-      const { data: { session } } = await sb.auth.getSession();
-      if(!session){ showMsg('triagemMsg','Classificado, mas sess\u00e3o expirou antes de enviar ao Estoque CD. Recarregue a p\u00e1gina e verifique manualmente.','err'); await new Promise(res=>setTimeout(res,3000)); fecharModal('modalTriagem'); renderTriagem(); return; }
-      const r = await fetch(SUPABASE_URL+'/functions/v1/uniformes-registrar-reaproveitamento', {
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
-        body: JSON.stringify({ produto_nome: triagemProdutoNomeAtual, quantidade: qtdReaproveitar }),
-      });
-      const d = await r.json();
-      if(!d.ok){
-        console.error('Falha ao integrar com Estoque CD:', d.error);
-        showMsg('triagemMsg','Classificado, mas houve erro ao enviar ao Estoque CD: '+d.error,'err');
-        await new Promise(res=>setTimeout(res,2500));
-      } else {
-        showMsg('triagemMsg','Enviado ao Estoque CD como "'+d.produto+'"!','ok');
-        await new Promise(res=>setTimeout(res,1200));
-      }
-    }catch(e){
-      console.error('Falha ao integrar com Estoque CD:', e);
-      showMsg('triagemMsg','Classificado, mas houve erro de conex\u00e3o ao enviar ao Estoque CD: '+(e && e.message ? e.message : e),'err');
-      await new Promise(res=>setTimeout(res,3000));
-    }
-  }
-
-  fecharModal('modalTriagem');
-  renderTriagem();
-}
-
-async function renderPendencias(){
-  const el = $('mainContent');
-  el.innerHTML = '<div class="loading">Carregando…</div>';
-  const { data, error } = await sb.from('vw_uniformes_saldo').select('*').eq('loja', lojaAtual).order('funcionario_ativo',{ascending:false}).order('funcionario_nome');
-  if(error){ el.innerHTML = '<div class="empty">Erro: '+esc(error.message)+'</div>'; return; }
-  const lista = data || [];
-  el.innerHTML =
-    '<div class="card">'+
-      '<h2>Peças com Colaboradores — '+esc(lojaAtual)+'</h2>'+
-      (lista.length ? '<div class="table-wrap"><table><thead><tr><th>Colaborador</th><th>Situação</th><th>Peça</th><th>Quantidade</th></tr></thead><tbody>'+
-        lista.map(p => (
-          '<tr>'+
-            '<td>'+esc(p.funcionario_nome)+'</td>'+
-            '<td>'+(p.funcionario_ativo?'<span class="badge badge-ativo">Ativo</span>':'<span class="badge badge-pend">Desligado — pendente</span>')+'</td>'+
-            '<td>'+esc(p.produto_nome)+'</td>'+
-            '<td>'+p.saldo+'</td>'+
-          '</tr>'
-        )).join('')+'</tbody></table></div>'
-      : '<div class="empty">Nenhuma peça em posse de colaboradores no momento.</div>')+
-    '</div>';
-}
-
-// ── util ──
-function fecharModal(id){ $(id).classList.remove('show'); }
-function showMsg(id, txt, tipo){ const m=$(id); m.textContent=txt; m.className='msg'+(txt?' show '+(tipo||''):''); }
 
 verificarAcessoEIniciar();
 </script>
