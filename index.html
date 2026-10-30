@@ -115,6 +115,24 @@
 </nav>
 
 <main id="mainContent"><div class="loading">Carregando…</div></main>
+
+<div class="modal-overlay" id="modalEditarPerda">
+  <div class="modal">
+    <h3>Editar lançamento</h3>
+    <div id="editarPerdaInfo" style="font-size:.8rem;color:var(--text-light);margin-bottom:12px"></div>
+    <div class="row">
+      <div class="field"><label>Data da perda</label><input class="inp" type="date" id="editData"></div>
+      <div class="field"><label>Quantidade</label><input class="inp" type="number" step="any" min="0" id="editQtd"></div>
+    </div>
+    <div class="field" style="margin-bottom:12px"><label>Motivo</label><select class="inp" id="editMotivo"></select></div>
+    <div class="field"><label>Observação (opcional)</label><textarea class="inp" id="editObs" rows="2"></textarea></div>
+    <div class="msg" id="editarPerdaMsg"></div>
+    <div class="modal-actions">
+      <button class="btn" id="btnSalvarEdicao" onclick="salvarEdicaoPerda()">Salvar</button>
+      <button class="btn-outline btn" onclick="fecharModal('modalEditarPerda')">Cancelar</button>
+    </div>
+  </div>
+</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -135,6 +153,8 @@ let lojaAtual = null;
 let currentTab = 'nova';
 let souBackoffice = false;
 let souMaster = false;
+let souEditor = false;
+let perdaEditando = null;
 let temPapelDeLoja = false;
 let produtosPrecificacaoCache = null;
 
@@ -163,6 +183,7 @@ async function verificarAcessoEIniciar(){
   temPapelDeLoja = ['loja','master_loja','master'].includes(perfil.tipo);
   souBackoffice = perfil.tipo === 'master' || perfil.tipo === 'backoffice' || perfil.perdas_backoffice === true;
   souMaster = perfil.tipo === 'master';
+  souEditor = souMaster || perfil.perdas_editor === true;
 
   if (perfil.tipo === 'master' || perfil.tipo === 'master_loja') minhasLojas = [...TODAS_LOJAS];
   else if (perfil.lojas && perfil.lojas.length) minhasLojas = perfil.lojas;
@@ -341,13 +362,14 @@ async function carregarHistorico(){
 
   if(error){ $('historicoTabela').innerHTML = '<div class="empty">Erro: '+esc(error.message)+'</div>'; return; }
   const lista = data || [];
+  perdasHistoricoCache = lista;
   if(!lista.length){ $('historicoTabela').innerHTML = '<div class="empty">Nenhuma perda registrada neste mês.</div>'; return; }
 
   const totalValor = lista.reduce((a,p)=>a+Number(p.valor_total),0);
   $('historicoTabela').innerHTML =
     '<div class="stat-box"><div class="stat"><div class="num">'+fmtMoeda(totalValor)+'</div><div class="lbl">Total do mês</div></div>'+
     '<div class="stat"><div class="num">'+lista.length+'</div><div class="lbl">Lançamentos</div></div></div>'+
-    '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Item</th><th>Qtd</th><th>Motivo</th><th>Observação</th><th>Valor</th>'+(souMaster?'<th></th>':'')+'</tr></thead><tbody>'+
+    '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Item</th><th>Qtd</th><th>Motivo</th><th>Observação</th><th>Valor</th>'+(souEditor?'<th></th>':'')+'</tr></thead><tbody>'+
       lista.map(p => (
         '<tr>'+
           '<td>'+fmtData(p.data_perda)+'</td>'+
@@ -357,13 +379,48 @@ async function carregarHistorico(){
           '<td>'+esc(p.motivo)+'</td>'+
           '<td>'+esc(p.observacao||'—')+'</td>'+
           '<td>'+fmtMoeda(p.valor_total)+'</td>'+
-          (souMaster ? '<td><button class="btn-danger" onclick="excluirPerda(\''+p.id+'\')">Excluir</button></td>' : '')+
+          (souEditor ? '<td style="white-space:nowrap"><button class="btn-danger" style="color:var(--bordo-dark);margin-right:8px" onclick="editarPerda(\''+p.id+'\')">Editar</button><button class="btn-danger" onclick="excluirPerda(\''+p.id+'\')">Excluir</button></td>' : '')+
         '</tr>'
       )).join('')+
     '</tbody></table></div>'+
-    (souMaster
-      ? '<p style="font-size:.72rem;color:var(--text-light);margin-top:10px">Só o master pode excluir lançamentos por aqui — a exclusão é definitiva.</p>'
+    (souEditor
+      ? '<p style="font-size:.72rem;color:var(--text-light);margin-top:10px">Você pode editar e excluir lançamentos de qualquer loja e mês — a exclusão é definitiva.</p>'
       : '<p style="font-size:.72rem;color:var(--text-light);margin-top:10px">Lançamentos não podem ser editados ou excluídos por aqui. Em caso de erro, fale com o master.</p>');
+}
+
+let perdasHistoricoCache = [];
+
+function editarPerda(id){
+  const p = perdasHistoricoCache.find(x => x.id === id);
+  if(!p) return;
+  perdaEditando = p;
+  $('editarPerdaInfo').textContent = p.loja+' — '+p.item_nome+' ('+p.unidade+')';
+  $('editData').value = p.data_perda;
+  $('editQtd').value = Number(p.quantidade);
+  $('editMotivo').innerHTML = (MOTIVOS.includes(p.motivo) ? MOTIVOS : [p.motivo].concat(MOTIVOS))
+    .map(m => '<option value="'+esc(m)+'"'+(m===p.motivo?' selected':'')+'>'+esc(m)+'</option>').join('');
+  $('editObs').value = p.observacao || '';
+  showMsg('editarPerdaMsg','','');
+  $('modalEditarPerda').classList.add('show');
+}
+
+async function salvarEdicaoPerda(){
+  if(!perdaEditando) return;
+  const data_perda = $('editData').value;
+  const quantidade = Number($('editQtd').value);
+  if(!data_perda){ showMsg('editarPerdaMsg','Informe a data da perda.','err'); return; }
+  if(!quantidade || quantidade <= 0){ showMsg('editarPerdaMsg','Informe uma quantidade válida.','err'); return; }
+  const btn = $('btnSalvarEdicao');
+  btn.disabled = true; btn.textContent = 'Salvando…';
+  const { error } = await sb.from('perdas').update({
+    data_perda, quantidade,
+    motivo: $('editMotivo').value,
+    observacao: $('editObs').value.trim() || null,
+  }).eq('id', perdaEditando.id);
+  btn.disabled = false; btn.textContent = 'Salvar';
+  if(error){ showMsg('editarPerdaMsg','Erro: '+error.message,'err'); return; }
+  fecharModal('modalEditarPerda');
+  carregarHistorico();
 }
 
 async function excluirPerda(id){
